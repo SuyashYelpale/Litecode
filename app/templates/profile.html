@@ -1,81 +1,90 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2 class="mb-4">👤 Your Profile</h2>
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-primary fw-bold">👤 Your Profile</h2>
+    <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">🔙 Back to Dashboard</a>
+  </div>
 
-<form method="POST" action="{{ url_for('main.profile') }}" class="row g-3" id="profile-form">
-
-  <!-- Full Name -->
-  <div class="col-md-6">
-    <label for="name" class="form-label">Full Name *</label>
-    <div class="input-group">
-      <input type="text" class="form-control" name="name" id="name" value="{{ user_data.name or '' }}" required readonly placeholder="Enter your full name">
-      <button class="btn btn-outline-secondary edit-btn" type="button" onclick="enableEdit('name')">✏️</button>
+  <form method="POST" action="{{ url_for('main.profile') }}" class="row g-4" id="profile-form">
+    <!-- Full Name -->
+    <div class="col-md-6">
+      <label for="name" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-light">👤</span>
+        <input type="text" class="form-control" name="name" id="name" value="{{ user_data.name or '' }}" required readonly>
+        <button class="btn btn-outline-primary" type="button" onclick="enableEdit('name')">✏️</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Mobile Number -->
-  <div class="col-md-6">
-    <label for="mobile" class="form-label">Mobile Number *</label>
-    <div class="input-group">
-      <input type="text" class="form-control" name="mobile" id="mobile" value="{{ user_data.mobile or '' }}" required readonly placeholder="Enter your mobile number">
-      <button class="btn btn-outline-secondary edit-btn" type="button" onclick="enableEdit('mobile')">✏️</button>
+    <!-- Mobile Number -->
+    <div class="col-md-6">
+      <label for="mobile" class="form-label fw-semibold">Mobile Number <span class="text-danger">*</span></label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-light">📱</span>
+        <input type="text" class="form-control" name="mobile" id="mobile" value="{{ user_data.mobile or '' }}" required readonly>
+        <button class="btn btn-outline-primary" type="button" onclick="enableEdit('mobile')">✏️</button>
+      </div>
     </div>
-  </div>
 
-  <!-- WhatsApp Number -->
-  <div class="col-md-6">
-    <label for="whatsapp" class="form-label">WhatsApp Number</label>
-    <div class="input-group">
-      <input type="text" class="form-control" name="whatsapp" id="whatsapp" value="{{ user_data.whatsapp or '' }}" readonly placeholder="Enter your WhatsApp number">
-      <button class="btn btn-outline-secondary edit-btn" type="button" onclick="enableEdit('whatsapp')">✏️</button>
+    <!-- WhatsApp Number -->
+    <div class="col-md-6">
+      <label for="whatsapp" class="form-label fw-semibold">WhatsApp Number</label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-light">💬</span>
+        <input type="text" class="form-control" name="whatsapp" id="whatsapp" value="{{ user_data.whatsapp or '' }}" readonly>
+        <button class="btn btn-outline-primary" type="button" onclick="enableEdit('whatsapp')">✏️</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Education -->
-  <div class="col-md-6">
-    <label for="education" class="form-label">Education *</label>
-    <div class="input-group">
-      <input type="text" class="form-control" name="education" id="education" value="{{ user_data.education or '' }}" required readonly placeholder="Your highest qualification">
-      <button class="btn btn-outline-secondary edit-btn" type="button" onclick="enableEdit('education')">✏️</button>
+    <!-- Education -->
+    <div class="col-md-6">
+      <label for="education" class="form-label fw-semibold">Education <span class="text-danger">*</span></label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-light">🎓</span>
+        <input type="text" class="form-control" name="education" id="education" value="{{ user_data.education or '' }}" required readonly>
+        <button class="btn btn-outline-primary" type="button" onclick="enableEdit('education')">✏️</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Permanent Address -->
-  <div class="col-12">
-    <label for="permanent_address" class="form-label">Permanent Address *</label>
-    <div class="input-group">
-      <textarea class="form-control" name="permanent_address" id="permanent_address" rows="2" required readonly placeholder="Enter your permanent address">{{ user_data.permanent_address or '' }}</textarea>
-      <button class="btn btn-outline-secondary edit-btn" type="button" onclick="enableEdit('permanent_address')">✏️</button>
+    <!-- Permanent Address -->
+    <div class="col-12">
+      <label for="permanent_address" class="form-label fw-semibold">Permanent Address <span class="text-danger">*</span></label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-light">🏠</span>
+        <textarea class="form-control" name="permanent_address" id="permanent_address" rows="2" required readonly>{{ user_data.permanent_address or '' }}</textarea>
+        <button class="btn btn-outline-primary" type="button" onclick="enableEdit('permanent_address')">✏️</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Current Address -->
-  <div class="col-12">
-    <label for="current_address" class="form-label">Current Address</label>
-    <div class="input-group">
-      <textarea class="form-control" name="current_address" id="current_address" rows="2" readonly placeholder="Enter your current address">{{ user_data.current_address or '' }}</textarea>
-      <button class="btn btn-outline-secondary edit-btn" type="button" onclick="enableEdit('current_address')">✏️</button>
+    <!-- Current Address -->
+    <div class="col-12">
+      <label for="current_address" class="form-label fw-semibold">Current Address</label>
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-light">📍</span>
+        <textarea class="form-control" name="current_address" id="current_address" rows="2" readonly>{{ user_data.current_address or '' }}</textarea>
+        <button class="btn btn-outline-primary" type="button" onclick="enableEdit('current_address')">✏️</button>
+      </div>
     </div>
-  </div>
 
-  <!-- Buttons -->
-  <div class="col-12 d-flex justify-content-between mt-4">
-    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">🔙 Back to Dashboard</a>
-    <button type="submit" class="btn btn-success">✅ Save Changes</button>
-  </div>
+    <!-- Form Buttons -->
+    <div class="col-12 d-flex justify-content-between mt-4">
+      <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">🔙 Back</a>
+      <button type="submit" class="btn btn-success px-4">✅ Save Changes</button>
+    </div>
+  </form>
+</div>
 
-</form>
-
-<!-- JavaScript to enable editing fields -->
+<!-- JS to Enable Editing -->
 <script>
   function enableEdit(fieldId) {
     const field = document.getElementById(fieldId);
     field.removeAttribute('readonly');
+    field.classList.add('border-primary', 'shadow-sm');
     field.focus();
   }
 
-  // Optional: prevent saving if no changes (basic check)
-  document.getElementById('profile-form').addEventListener('submit', function(e) {
+  document.getElementById('profile-form').addEventListener('submit', function (e) {
     let changed = false;
     document.querySelectorAll('input, textarea').forEach(input => {
       if (!input.readOnly) {

@@ -1,5 +1,69 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>About Us</h2>
-<p>We are LiteCode — passionate about coding education!</p>
+<div class="container py-5">
+  <div class="row mb-4">
+    <div class="col-md-8">
+      <h2 class="text-primary fw-bold">🎓 About LiteCode</h2>
+      <p class="lead mt-3">
+        <strong>LiteCode</strong> is a next-generation platform dedicated to nurturing coding talent and bridging the gap between learning and real-world opportunities.
+        Whether you're a student looking to master skills, a parent seeking a bright tech future for your child, or a client hiring fresh talent – LiteCode delivers excellence.
+      </p>
+    </div>
+    <div class="col-md-4 text-center">
+      <img src="{{ url_for('static', filename='images/coding_team.svg') }}" alt="LiteCode Team" class="img-fluid" style="max-height: 200px;">
+    </div>
+  </div>
+
+  <div class="row mt-5">
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <h4 class="text-success mb-3">👨‍🎓 For Students</h4>
+          <p>Master Python, Web Development, Data Structures, and more with hands-on training, live projects, and placement support.</p>
+          <span class="badge bg-success">Job Ready Curriculum</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <h4 class="text-primary mb-3">👨‍👩‍👧 For Parents</h4>
+          <p>Track your child's academic progress, attendance, and performance through our secure parent portal.</p>
+          <span class="badge bg-primary">Transparent Reporting</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <h4 class="text-warning mb-3">💼 For Clients</h4>
+          <p>Hire from our pool of pre-trained, smart and job-ready developers. Collaborate for internships, projects, or placements.</p>
+          <span class="badge bg-warning text-dark">Hire with Confidence</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row mt-5">
+    <div class="col-md-12">
+      <h3 class="mb-3 text-dark">🚀 Why Choose LiteCode?</h3>
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item">✅ Industry-Relevant Curriculum designed by experts</li>
+        <li class="list-group-item">✅ Personalized Mentorship & Doubt Sessions</li>
+        <li class="list-group-item">✅ Hands-on Projects + Real-time Feedback</li>
+        <li class="list-group-item">✅ Dedicated Job Placement Assistance</li>
+        <li class="list-group-item">✅ Smart Attendance, Grade Tracking & Scheduling</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="row mt-5">
+    <div class="col text-center">
+      <h4 class="fw-bold text-secondary">💬 Let's build your future — together, with LiteCode.</h4>
+      <a href="{{ url_for('main.contact') }}" class="btn btn-lg btn-outline-primary mt-3">📩 Contact Us</a>
+    </div>
+  </div>
+</div>
 {% endblock %}

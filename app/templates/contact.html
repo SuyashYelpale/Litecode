@@ -1,5 +1,55 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Contact Us</h2>
-<p>Email us at: support@litecode.com</p>
+<div class="container py-5">
+  <div class="row">
+    <div class="col-md-7">
+      <h2 class="mb-4 text-primary">📞 Contact LiteCode</h2>
+      <p class="mb-4">
+        This page is for:
+        <ul>
+          <li>👨‍🎓 <strong>Students</strong> – who need help with class schedules, placements, or accounts.</li>
+          <li>👨‍👩‍👧 <strong>Parents</strong> – seeking progress updates or fee-related queries.</li>
+          <li>💼 <strong>Clients/Institutes</strong> – who want to collaborate, hire students, or partner with LiteCode.</li>
+        </ul>
+      </p>
+      <form method="POST" action="{{ url_for('main.contact') }}">
+        <div class="mb-3">
+          <label class="form-label">Your Name</label>
+          <input type="text" class="form-control" name="name" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Your Email</label>
+          <input type="email" class="form-control" name="email" required>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Message</label>
+          <textarea class="form-control" name="message" rows="5" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">📨 Send Message</button>
+      </form>
+      {% if success %}
+      <div class="alert alert-success mt-3">
+        ✅ Your message has been sent! We’ll get back to you within 24 hours.
+      </div>
+      {% endif %}
+    </div>
+    <div class="col-md-5">
+      <div class="card border-0 shadow p-4 bg-light">
+        <h4 class="text-dark mb-3">📍 Our Office</h4>
+        <p><strong>LiteCode HQ</strong><br>
+        Office No. 1,2,3,4, Saket House, near Pratik Hostel,<br/>
+        near Navale Hospital, Manaji Nagar, Narhe, Pune, Maharashtra 411041</p>
+        
+        <h5 class="mt-4">📧 Email Support</h5>
+        <p>info@ilitecode.com</p>
+
+        <h5 class="mt-4">📞 Call Us</h5>
+        <p>+918127288127</p>
+
+        <h5 class="mt-4">⏰ Working Hours</h5>
+        <p>Monday - Friday: 10 AM – 6 PM</p>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

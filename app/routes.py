@@ -189,6 +189,16 @@ def logout():
 def about():
     return render_template("about.html")
 
-@main.route('/contact')
+@main.route('/contact', methods=["GET", "POST"])
 def contact():
-    return render_template("contact.html")
+    if request.method == "POST":
+        name = request.form['name']
+        email = request.form['email']
+        message = request.form['message']
+
+        # Log or email the message – (here, just print for now)
+        print(f"[CONTACT] Name: {name}, Email: {email}, Message: {message}")
+
+        return render_template("contact.html", success=True)
+    return render_template("contact.html", success=False)
+
