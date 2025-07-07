@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>📄 Page Title</h2>
+<p>Content goes here...</p>
+{% endblock %}
+
+
+{% extends 'base.html' %}
+{% block content %}
+<h2>🗂 {{ "Batches" if request.path.endswith("batches") else "Placed Students" }}</h2>
+<p>Coming soon...</p>
+{% endblock %}

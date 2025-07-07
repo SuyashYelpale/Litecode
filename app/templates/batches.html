@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="mb-4 text-primary">📦 Batches for "{{ class_name }}"</h2>
+
+<!-- Back -->
+<div class="mb-3">
+  <a href="{{ url_for('main.classes') }}" class="btn btn-outline-secondary">← Back to Classes</a>
+</div>
+
+<!-- Add Batch Form -->
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="POST" class="row g-3">
+      <input type="hidden" name="class_id" value="{{ class_id }}">
+      
+      <div class="col-md-4">
+        <input name="batch_name" class="form-control" placeholder="Batch Name" required>
+      </div>
+      <div class="col-md-2">
+        <select name="day" class="form-select" required>
+          <option selected disabled>Day</option>
+          <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+          <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <input type="date" name="start_date" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <input name="time_slot" class="form-control" placeholder="Time (e.g. 6–8PM)" required>
+      </div>
+      <div class="col-md-2">
+        <input name="notes" class="form-control" placeholder="Notes (optional)">
+      </div>
+
+      <div class="col-12 text-end">
+        <button class="btn btn-primary">➕ Add Batch</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Show Existing Batches -->
+{% if batches %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead class="table-light">
+      <tr>
+        <th>📦 Batch</th>
+        <th>📆 Day</th>
+        <th>📅 Start Date</th>
+        <th>⏰ Time</th>
+        <th>🧾 Notes</th>
+        <th>👥 Students</th>
+        <th>🎯 Total Classes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for b in batches %}
+      <tr>
+        <td>{{ b.name }}</td>
+        <td>{{ b.day }}</td>
+        <td>{{ b.start_date }}</td>
+        <td>{{ b.time_slot }}</td>
+        <td>{{ b.notes or '-' }}</td>
+        <td><span class="badge bg-success">{{ b.total_students }}</span></td>
+        <td><span class="badge bg-info">{{ b.total_classes }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="alert alert-warning">No batches added yet.</div>
+{% endif %}
+{% endblock %}

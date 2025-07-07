@@ -1,0 +1,111 @@
+/* ====== Global Styles ====== */
+body {
+  background-color: #f0ebf8;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ====== Navbar ====== */
+.navbar-gradient {
+  background: linear-gradient(to right, #0f2027, #2c5364);
+  color: white;
+}
+
+/* ====== Hover Zone (Invisible Left Trigger) ====== */
+#hover-zone {
+  width: 10px;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 56px;
+  z-index: 999;
+}
+
+/* ====== Sidebar ====== */
+.sidebar {
+  position: fixed;
+  left: -200px;
+  top: 56px;
+  width: 200px;
+  height: calc(100vh - 56px);
+  background: #001f3f;
+  padding-top: 20px;
+  transition: left 0.3s ease;
+  z-index: 1000;
+}
+
+.sidebar.show {
+  left: 0;
+}
+
+.sidebar a {
+  display: block;
+  color: #f8f9fa;
+  padding: 14px 24px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background 0.3s;
+}
+
+.sidebar a:hover {
+  background-color: #005f73;
+}
+
+/* Logout link at bottom */
+.sidebar .logout-link {
+  position: absolute;
+  bottom: 20px;
+  width: 100%;
+  color: #f8d7da;
+}
+
+/* ====== Main Content ====== */
+.content {
+  flex-grow: 1;
+  padding-top: 30px;
+  padding-left: 20px;
+  padding-right: 20px;
+  transition: margin-left 0.3s ease;
+}
+
+/* ====== Footer ====== */
+.footer {
+  background: #111;
+  color: #fff;
+  text-align: center;
+  padding: 12px 0;
+  margin-top: auto;
+  font-size: 0.9rem;
+}
+
+/* ====== Navbar Dropdown Hover (Optional Enhancement) ====== */
+.dropdown:hover .dropdown-menu {
+  display: block;
+  margin-top: 0;
+}
+
+.dropdown-menu {
+  margin-top: 12px;
+  border-radius: 0.5rem;
+}
+
+/* Gradient buttons and headers */
+.btn-gradient {
+  background: linear-gradient(to right, #6a11cb, #2575fc);
+  color: white;
+  font-weight: 600;
+  transition: 0.3s ease;
+}
+
+.btn-gradient:hover {
+  background: linear-gradient(to right, #2575fc, #6a11cb);
+  transform: scale(1.02);
+}
+
+.bg-gradient {
+  background: linear-gradient(to right, #2c3e50, #4ca1af);
+}
