@@ -1,78 +1,74 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2 class="mb-4 text-primary">📦 Batches for {{ class_data.name }}</h2>
+<h2 class="mb-4 text-primary">📦 Batches for "{{ class_name }}"</h2>
 
-<!-- Back to Classes -->
+<!-- Back -->
 <div class="mb-3">
-  <a href="{{ url_for('main.classes') }}" class="btn btn-outline-secondary">🔙 Back to Classes</a>
+  <a href="{{ url_for('main.classes') }}" class="btn btn-outline-secondary">← Back to Classes</a>
 </div>
 
 <!-- Add Batch Form -->
 <div class="card shadow-sm mb-4">
   <div class="card-body">
-    <h5 class="card-title">➕ Add New Batch</h5>
-    <form method="POST" action="{{ url_for('main.add_batch') }}">
-      <input type="hidden" name="class_id" value="{{ class_data.id }}">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label class="form-label">Batch Name</label>
-          <input name="batch_name" class="form-control" required>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Day</label>
-          <input name="day" class="form-control" required>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Start Date</label>
-          <input type="date" name="start_date" class="form-control" required>
-        </div>
-        <div class="col-md-6">
-          <label class="form-label">Time Slot</label>
-          <input name="time_slot" class="form-control" required>
-        </div>
-        <div class="col-12">
-          <label class="form-label">Notes</label>
-          <textarea name="notes" class="form-control" rows="2"></textarea>
-        </div>
-        <div class="col-12 text-end">
-          <button type="submit" class="btn btn-gradient">➕ Add Batch</button>
-        </div>
+    <form method="POST" class="row g-3">
+      <input type="hidden" name="class_id" value="{{ class_id }}">
+      
+      <div class="col-md-4">
+        <input name="batch_name" class="form-control" placeholder="Batch Name" required>
+      </div>
+      <div class="col-md-2">
+        <select name="day" class="form-select" required>
+          <option selected disabled>Day</option>
+          <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+          <option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <input type="date" name="start_date" class="form-control" required>
+      </div>
+      <div class="col-md-2">
+        <input name="time_slot" class="form-control" placeholder="Time (e.g. 6–8PM)" required>
+      </div>
+      <div class="col-md-2">
+        <input name="notes" class="form-control" placeholder="Notes (optional)">
+      </div>
+
+      <div class="col-12 text-end">
+        <button class="btn btn-primary">➕ Add Batch</button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Batches List -->
-<div class="card shadow-sm">
-  <div class="card-body">
-    <h5 class="card-title">📦 Current Batches</h5>
-    <div class="table-responsive">
-      <table class="table table-hover">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Day</th>
-            <th>Start Date</th>
-            <th>Time Slot</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for batch in batches %}
-          <tr>
-            <td>{{ batch.name }}</td>
-            <td>{{ batch.day }}</td>
-            <td>{{ batch.start_date }}</td>
-            <td>{{ batch.time_slot }}</td>
-            <td>
-              <a href="#" class="btn btn-sm btn-outline-primary">Edit</a>
-              <a href="#" class="btn btn-sm btn-outline-danger">Delete</a>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  </div>
+<!-- Show Existing Batches -->
+{% if batches %}
+<div class="table-responsive">
+  <table class="table table-striped table-hover">
+    <thead class="table-light">
+      <tr>
+        <th>📦 Batch</th>
+        <th>📆 Day</th>
+        <th>📅 Start Date</th>
+        <th>⏰ Time</th>
+        <th>🧾 Notes</th>
+        <th>👥 Students</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for batch in batches %}
+      <tr>
+        <td>{{ batch[2] }}</td>  <!-- name -->
+        <td>{{ batch[3] }}</td>  <!-- day -->
+        <td>{{ batch[4] }}</td>  <!-- start_date -->
+        <td>{{ batch[5] }}</td>  <!-- time_slot -->
+        <td>{{ batch[6] or '-' }}</td>  <!-- notes -->
+        <td><span class="badge bg-success">{{ batch[7] }}</span></td>  <!-- student_count -->
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 </div>
+{% else %}
+<div class="alert alert-warning">No batches added yet.</div>
+{% endif %}
 {% endblock %}

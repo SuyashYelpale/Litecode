@@ -1,20 +1,404 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="d-flex justify-content-center align-items-center min-vh-100">
-  <div class="card p-4 shadow-lg rounded-4" style="width: 100%; max-width: 400px;">
-    <h3 class="text-center mb-4">📝 LiteCode Register</h3>
-    <form method="POST">
-      <div class="form-floating mb-3">
-        <input type="text" name="username" class="form-control" id="registerUsername" placeholder="Username" required>
-        <label for="registerUsername">Username</label>
-      </div>
-      <div class="form-floating mb-4">
-        <input type="password" name="password" class="form-control" id="registerPassword" placeholder="Password" required>
-        <label for="registerPassword">Password</label>
-      </div>
-      <button class="btn btn-success w-100 rounded-pill" type="submit">Register</button>
-      <p class="mt-3 text-center">Already have an account? <a href="{{ url_for('auth.login') }}">Login here</a></p>
-    </form>
-  </div>
-</div>
-{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - LiteCode</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --success-dark: #0d9f6e;
+            --error: #ef4444;
+            --text: #334155;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--light-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.1) 0%, rgba(255, 255, 255, 0) 90%);
+            color: var(--text);
+            line-height: 1.6;
+        }
+        
+        .register-container {
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 420px;
+            transform: translateY(0);
+            opacity: 1;
+            transition: all 0.4s ease;
+            border: 1px solid var(--border);
+        }
+        
+        .register-container:hover {
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.12);
+            transform: translateY(-5px);
+        }
+        
+        .register-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 1.75rem;
+            color: var(--primary);
+            font-weight: 600;
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        
+        .register-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            border-radius: 2px;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.9rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background-color: var(--card-bg);
+            color: var(--text);
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+        
+        .form-control::placeholder {
+            color: #94a3b8;
+        }
+        
+        .password-wrapper {
+            position: relative;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #94a3b8;
+            transition: color 0.2s;
+        }
+        
+        .toggle-password:hover {
+            color: var(--primary);
+        }
+        
+        .btn-register {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(99, 102, 241, 0.2);
+            margin-top: 0.5rem;
+        }
+        
+        .btn-register:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            box-shadow: 0 6px 12px rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn-register:active {
+            transform: translateY(0);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+        
+        .login-link a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .login-link a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary);
+            transition: width 0.3s ease;
+        }
+        
+        .login-link a:hover::after {
+            width: 100%;
+        }
+        
+        .alert-messages {
+            margin-bottom: 1.5rem;
+        }
+        
+        .alert {
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .alert-error {
+            background-color: #fee2e2;
+            color: #b91c1c;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .alert-success {
+            background-color: #dcfce7;
+            color: #166534;
+            border-left: 4px solid #10b981;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Floating label effect */
+        .floating-label-group {
+            position: relative;
+            margin-bottom: 1.5rem;
+        }
+        
+        .floating-label {
+            position: absolute;
+            left: 1rem;
+            top: 0.9rem;
+            color: #94a3b8;
+            transition: all 0.2s ease;
+            pointer-events: none;
+            background: var(--card-bg);
+            padding: 0 0.25rem;
+        }
+        
+        .form-control:focus + .floating-label,
+        .form-control:not(:placeholder-shown) + .floating-label {
+            top: -0.6rem;
+            left: 0.8rem;
+            font-size: 0.8rem;
+            color: var(--primary);
+        }
+        
+        /* Strength meter */
+        .strength-meter {
+            height: 4px;
+            background: #e2e8f0;
+            border-radius: 2px;
+            margin-top: 0.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .strength-meter::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 0;
+            background: #ef4444;
+            transition: width 0.3s ease, background 0.3s ease;
+        }
+        
+        .strength-meter[data-strength="1"]::after {
+            width: 25%;
+            background: #ef4444;
+        }
+        
+        .strength-meter[data-strength="2"]::after {
+            width: 50%;
+            background: #f59e0b;
+        }
+        
+        .strength-meter[data-strength="3"]::after {
+            width: 75%;
+            background: #3b82f6;
+        }
+        
+        .strength-meter[data-strength="4"]::after {
+            width: 100%;
+            background: #10b981;
+        }
+        
+        .strength-info {
+            font-size: 0.75rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <h1 class="register-title">Join LiteCode</h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="alert-messages">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+        
+        <form method="POST">
+            <div class="floating-label-group">
+                <input type="text" name="username" class="form-control" id="username" placeholder=" " required>
+                <label class="floating-label" for="username">Username</label>
+            </div>
+            
+            <div class="floating-label-group">
+                <div class="password-wrapper">
+                    <input type="password" name="password" class="form-control" id="password" placeholder=" " required>
+                    <label class="floating-label" for="password">Password</label>
+                    <span class="toggle-password" onclick="togglePassword('password')">👁️</span>
+                </div>
+                <div class="strength-meter" id="strength-meter"></div>
+                <div class="strength-info" id="strength-info">Password strength</div>
+            </div>
+            
+            <div class="floating-label-group">
+                <div class="password-wrapper">
+                    <input type="password" name="confirm_password" class="form-control" id="confirm_password" placeholder=" " required>
+                    <label class="floating-label" for="confirm_password">Confirm Password</label>
+                    <span class="toggle-password" onclick="togglePassword('confirm_password')">👁️</span>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn-register">
+                <span class="btn-text">Create Account</span>
+            </button>
+        </form>
+        
+        <div class="login-link">
+            Already have an account? <a href="{{ url_for('auth.login') }}">Login</a>
+        </div>
+    </div>
+
+    <script>
+        // Toggle password visibility
+        function togglePassword(id) {
+            const input = document.getElementById(id);
+            const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+            input.setAttribute('type', type);
+        }
+        
+        // Password strength meter
+        const passwordInput = document.getElementById('password');
+        const strengthMeter = document.getElementById('strength-meter');
+        const strengthInfo = document.getElementById('strength-info');
+        
+        passwordInput.addEventListener('input', updateStrengthMeter);
+        
+        function updateStrengthMeter() {
+            const password = passwordInput.value;
+            let strength = 0;
+            let messages = [];
+            
+            // Check length
+            if (password.length >= 8) strength++;
+            else messages.push("Use 8+ characters");
+            
+            // Check for numbers
+            if (/\d/.test(password)) strength++;
+            else messages.push("Add numbers");
+            
+            // Check for special chars
+            if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+            else messages.push("Add special chars");
+            
+            // Check for uppercase letters
+            if (/[A-Z]/.test(password)) strength++;
+            else messages.push("Add uppercase letters");
+            
+            strengthMeter.setAttribute('data-strength', strength);
+            
+            const strengthText = [
+                "Very Weak",
+                "Weak",
+                "Moderate",
+                "Strong",
+                "Very Strong"
+            ][strength];
+            
+            const strengthColors = [
+                "#ef4444",
+                "#f59e0b",
+                "#3b82f6",
+                "#10b981"
+            ][strength - 1] || "#ef4444";
+            
+            strengthInfo.textContent = messages.length > 0 
+                ? `Password strength: ${strengthText} (${messages.join(', ')})` 
+                : `Password strength: ${strengthText}`;
+            strengthInfo.style.color = strengthColors;
+        }
+        
+        // Add animation to button on hover
+        const btnRegister = document.querySelector('.btn-register');
+        btnRegister.addEventListener('mouseenter', () => {
+            btnRegister.style.transform = 'translateY(-2px)';
+        });
+        
+        btnRegister.addEventListener('mouseleave', () => {
+            btnRegister.style.transform = 'translateY(0)';
+        });
+    </script>
+</body>
+</html>

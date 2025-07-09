@@ -1,5 +1,7 @@
-from flask import Blueprint, render_template, session, redirect, url_for, request
+from flask import Blueprint, render_template, session, redirect, url_for, request, flash
 from app.models import get_db
+from flask import abort
+from datetime import datetime
 
 main = Blueprint("main", __name__)
 
@@ -11,7 +13,7 @@ def home():
 def dashboard():
     if 'user' not in session:
         return redirect(url_for('auth.login'))
-    return render_template("dashboard.html", user=session['user'])
+    return render_template("dashboard.html")
 
 @main.route('/profile', methods=["GET", "POST"])
 def profile():
@@ -23,7 +25,6 @@ def profile():
 
     username = session['user']
 
-    # On form submit
     if request.method == "POST":
         name = request.form['name']
         mobile = request.form['mobile']
@@ -44,8 +45,10 @@ def profile():
         """, (name, mobile, whatsapp, education, permanent_address, current_address, username))
         conn.commit()
 
-    # Get latest user info
-    cursor.execute("SELECT name, mobile, whatsapp, education, permanent_address, current_address FROM users WHERE username=%s", (username,))
+    cursor.execute("""
+        SELECT name, mobile, whatsapp, education, permanent_address, current_address 
+        FROM users WHERE username=%s
+    """, (username,))
     result = cursor.fetchone()
     conn.close()
 
@@ -58,127 +61,201 @@ def profile():
         'current_address': result[5],
     }
 
-    return render_template("profile.html", user=session['user'], user_data=user_data)
+    return render_template("profile.html", user_data=user_data)
 
-
-@main.route('/classes', methods=["GET", "POST"])
+@main.route('/classes')
 def classes():
+    if 'user' not in session:
+        return redirect(url_for('auth.login'))
+
     conn = get_db()
-    cursor = conn.cursor()
-
-    if request.method == "POST":
-        cname = request.form['class_name']
-        cursor.execute("INSERT INTO classes (name) VALUES (%s)", (cname,))
-        conn.commit()
-
-    # Get classes with batch counts
+    cursor = conn.cursor(dictionary=True)
+    
     cursor.execute("""
         SELECT c.id, c.name, COUNT(b.id) as batch_count 
-        FROM classes c 
-        LEFT JOIN batches b ON c.id = b.class_id 
-        GROUP BY c.id, c.name
+        FROM classes c
+        LEFT JOIN batches b ON b.class_id = c.id
+        GROUP BY c.id
+        ORDER BY c.name
     """)
-    raw_classes = cursor.fetchall()
+    classes = cursor.fetchall()
+    conn.close()
     
-    # Convert tuples to dictionaries for easier template access
-    classes = []
-    for cls in raw_classes:
-        classes.append({
-            'id': cls[0],
-            'name': cls[1],
-            'batch_count': cls[2]
-        })
+    return render_template('classes.html', classes=classes)
+
+@main.route('/batches')
+def all_batches():
+    if 'user' not in session:
+        return redirect(url_for('auth.login'))
+        
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute("""
+        SELECT b.*, c.name as class_name, 
+               (SELECT COUNT(*) FROM students WHERE batch_id = b.id) as student_count
+        FROM batches b
+        JOIN classes c ON b.class_id = c.id
+        ORDER BY c.name, b.start_date
+    """)
+    batches = cursor.fetchall()
+    
+    cursor.execute("SELECT id, name FROM classes ORDER BY name")
+    classes = cursor.fetchall()
     
     conn.close()
-    return render_template("classes.html", user=session['user'], classes=classes)
-
-@main.route('/edit_class/<int:class_id>', methods=["POST"])
-def edit_class(class_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    new_name = request.form['new_name']
-    cursor.execute("UPDATE classes SET name = %s WHERE id = %s", (new_name, class_id))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('main.classes'))
-
-@main.route('/delete_class/<int:class_id>', methods=["POST"])
-def delete_class(class_id):
-    conn = get_db()
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM classes WHERE id = %s", (class_id,))
-    conn.commit()
-    conn.close()
-    return redirect(url_for('main.classes'))
-
-@main.route('/class_batches/<int:class_id>')
-def class_batches(class_id):
-    conn = get_db()
-    cursor = conn.cursor()
     
-    # Get class details
+    return render_template("batches.html",
+                         batches=batches,
+                         classes=classes,
+                         all_batches_view=True)
+
+@main.route('/batches/<int:class_id>', methods=['GET', 'POST'])
+def batches(class_id):
+    if 'user' not in session:
+        return redirect(url_for('auth.login'))
+
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    
     cursor.execute("SELECT * FROM classes WHERE id = %s", (class_id,))
     class_data = cursor.fetchone()
     
-    # Get batches for this class
-    cursor.execute("SELECT * FROM batches WHERE class_id = %s", (class_id,))
+    if not class_data:
+        conn.close()
+        abort(404)
+    
+    if request.method == 'POST':
+        batch_name = request.form['batch_name']
+        day = request.form['day']
+        start_date = request.form['start_date']
+        time_slot = request.form['time_slot']
+        notes = request.form.get('notes', '')
+        
+        cursor.execute(
+            "INSERT INTO batches (class_id, name, day, start_date, time_slot, notes) VALUES (%s, %s, %s, %s, %s, %s)",
+            (class_id, batch_name, day, start_date, time_slot, notes)
+        )
+        conn.commit()
+        flash('Batch created successfully!', 'success')
+        return redirect(url_for('main.batches', class_id=class_id))
+    
+    cursor.execute("""
+        SELECT b.*, COUNT(s.id) as student_count
+        FROM batches b
+        LEFT JOIN students s ON s.batch_id = b.id
+        WHERE b.class_id = %s
+        GROUP BY b.id
+        ORDER BY b.start_date
+    """, (class_id,))
     batches = cursor.fetchall()
     
     conn.close()
     
-    return render_template("class_batches.html", 
-                         user=session['user'],
+    return render_template("batches.html",
                          class_data=class_data,
                          batches=batches)
 
-@main.route('/add_batch', methods=["POST"])
-def add_batch():
+@main.route('/edit_batch/<int:batch_id>', methods=['GET', 'POST'])
+def edit_batch(batch_id):
+    if 'user' not in session:
+        return redirect(url_for('auth.login'))
+
     conn = get_db()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
     
-    class_id = request.form['class_id']
-    batch_name = request.form['batch_name']
-    day = request.form['day']
-    start_date = request.form['start_date']
-    time_slot = request.form['time_slot']
-    notes = request.form.get('notes', '')
+    if request.method == 'POST':
+        batch_name = request.form['batch_name']
+        day = request.form['day']
+        start_date = request.form['start_date']
+        time_slot = request.form['time_slot']
+        notes = request.form.get('notes', '')
+        class_id = request.form['class_id']
+        
+        cursor.execute(
+            "UPDATE batches SET name = %s, day = %s, start_date = %s, time_slot = %s, notes = %s WHERE id = %s",
+            (batch_name, day, start_date, time_slot, notes, batch_id)
+        )
+        conn.commit()
+        conn.close()
+        
+        flash('Batch updated successfully!', 'success')
+        return redirect(url_for('main.batches', class_id=class_id))
     
-    cursor.execute(
-        "INSERT INTO batches (class_id, name, day, start_date, time_slot, notes) VALUES (%s, %s, %s, %s, %s, %s)",
-        (class_id, batch_name, day, start_date, time_slot, notes)
-    )
+    cursor.execute("SELECT * FROM batches WHERE id = %s", (batch_id,))
+    batch = cursor.fetchone()
+    
+    cursor.execute("SELECT id, name FROM classes WHERE id = %s", (batch['class_id'],))
+    class_data = cursor.fetchone()
+    
+    conn.close()
+    
+    if not batch:
+        abort(404)
+    
+    return render_template("edit_batch.html",
+                         batch=batch,
+                         class_data=class_data)
+
+@main.route('/delete_batch/<int:batch_id>', methods=['POST'])
+def delete_batch(batch_id):
+    if 'user' not in session:
+        return redirect(url_for('auth.login'))
+
+    conn = get_db()
+    cursor = conn.cursor(dictionary=True)
+    
+    cursor.execute("SELECT class_id FROM batches WHERE id = %s", (batch_id,))
+    result = cursor.fetchone()
+    
+    if not result:
+        conn.close()
+        abort(404)
+    
+    class_id = result['class_id']
+    
+    cursor.execute("DELETE FROM batches WHERE id = %s", (batch_id,))
     conn.commit()
     conn.close()
     
-    return redirect(url_for('main.class_batches', class_id=class_id))
-
+    flash('Batch deleted successfully!', 'success')
+    return redirect(url_for('main.batches', class_id=class_id))
 
 @main.route('/students', methods=["GET", "POST"])
 def students():
+    if 'user' not in session:
+        return redirect(url_for('auth.login'))
+
     conn = get_db()
-    cursor = conn.cursor()
+    cursor = conn.cursor(dictionary=True)
 
     if request.method == "POST":
         name = request.form['name']
         email = request.form['email']
         class_id = request.form['class_id']
-        cursor.execute("INSERT INTO students (name, email, class_id) VALUES (%s, %s, %s)", (name, email, class_id))
+        cursor.execute(
+            "INSERT INTO students (name, email, class_id) VALUES (%s, %s, %s)",
+            (name, email, class_id)
+        )
         conn.commit()
 
-    cursor.execute("SELECT students.id, students.name, students.email, classes.name FROM students JOIN classes ON students.class_id = classes.id")
+    cursor.execute("""
+        SELECT students.id, students.name, students.email, classes.name as class_name 
+        FROM students JOIN classes ON students.class_id = classes.id
+    """)
     data = cursor.fetchall()
-    cursor.execute("SELECT * FROM classes")
+    
+    cursor.execute("SELECT id, name FROM classes ORDER BY name")
     classes = cursor.fetchall()
+    
     conn.close()
-    return render_template("students.html", user=session['user'], students=data, classes=classes)
-
-@main.route('/batches')
-def batches():
-    return render_template("batches.html", user=session['user'])
+    return render_template("students.html", students=data, classes=classes)
 
 @main.route('/placed-students')
 def placed_students():
-    return render_template("placed_students.html", user=session['user'])
+    if 'user' not in session:
+        return redirect(url_for('auth.login'))
+    return render_template("placed_students.html")
 
 @main.route('/logout')
 def logout():
@@ -189,16 +266,6 @@ def logout():
 def about():
     return render_template("about.html")
 
-@main.route('/contact', methods=["GET", "POST"])
+@main.route('/contact')
 def contact():
-    if request.method == "POST":
-        name = request.form['name']
-        email = request.form['email']
-        message = request.form['message']
-
-        # Log or email the message – (here, just print for now)
-        print(f"[CONTACT] Name: {name}, Email: {email}, Message: {message}")
-
-        return render_template("contact.html", success=True)
-    return render_template("contact.html", success=False)
-
+    return render_template("contact.html")

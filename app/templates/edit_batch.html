@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2 class="mb-4 text-primary">✏️ Edit Batch</h2>
+
+<div class="card shadow-sm">
+  <div class="card-body">
+    <form method="POST">
+      <input type="hidden" name="class_id" value="{{ batch.class_id }}">
+      
+      <div class="mb-3">
+        <label class="form-label">Batch Name</label>
+        <input type="text" name="batch_name" class="form-control" value="{{ batch.name }}" required>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Day</label>
+        <select name="day" class="form-select" required>
+          <option value="Monday" {% if batch.day == 'Monday' %}selected{% endif %}>Monday</option>
+          <option value="Tuesday" {% if batch.day == 'Tuesday' %}selected{% endif %}>Tuesday</option>
+          <option value="Wednesday" {% if batch.day == 'Wednesday' %}selected{% endif %}>Wednesday</option>
+          <option value="Thursday" {% if batch.day == 'Thursday' %}selected{% endif %}>Thursday</option>
+          <option value="Friday" {% if batch.day == 'Friday' %}selected{% endif %}>Friday</option>
+          <option value="Saturday" {% if batch.day == 'Saturday' %}selected{% endif %}>Saturday</option>
+          <option value="Sunday" {% if batch.day == 'Sunday' %}selected{% endif %}>Sunday</option>
+        </select>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Start Date</label>
+        <input type="date" name="start_date" class="form-control" value="{{ batch.start_date }}" required>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Time Slot</label>
+        <input type="text" name="time_slot" class="form-control" value="{{ batch.time_slot }}" placeholder="e.g. 6–8PM" required>
+      </div>
+      
+      <div class="mb-3">
+        <label class="form-label">Notes</label>
+        <textarea name="notes" class="form-control">{{ batch.notes }}</textarea>
+      </div>
+      
+      <div class="d-flex justify-content-between">
+        <a href="{{ url_for('main.batches', class_id=batch.class_id) }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

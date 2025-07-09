@@ -109,3 +109,32 @@ body {
 .bg-gradient {
   background: linear-gradient(to right, #2c3e50, #4ca1af);
 }
+
+
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0ebf8;
+}
+
+.auth-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+}
+
+.sidebar-nested {
+  margin-left: 1.5rem;
+  border-left: 2px solid #dee2e6;
+  padding-left: 0.5rem;
+}
+
+.sidebar-nested a {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}

@@ -1,69 +1,37 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
 {% block content %}
-<div class="container py-5">
-  <div class="row mb-4">
-    <div class="col-md-8">
-      <h2 class="text-primary fw-bold">🎓 About LiteCode</h2>
-      <p class="lead mt-3">
-        <strong>LiteCode</strong> is a next-generation platform dedicated to nurturing coding talent and bridging the gap between learning and real-world opportunities.
-        Whether you're a student looking to master skills, a parent seeking a bright tech future for your child, or a client hiring fresh talent – LiteCode delivers excellence.
-      </p>
-    </div>
-    <div class="col-md-4 text-center">
-      <img src="{{ url_for('static', filename='images/coding_team.svg') }}" alt="LiteCode Team" class="img-fluid" style="max-height: 200px;">
-    </div>
-  </div>
-
-  <div class="row mt-5">
-    <div class="col-md-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body text-center">
-          <h4 class="text-success mb-3">👨‍🎓 For Students</h4>
-          <p>Master Python, Web Development, Data Structures, and more with hands-on training, live projects, and placement support.</p>
-          <span class="badge bg-success">Job Ready Curriculum</span>
+<div class="container">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h2 class="card-title text-center mb-4">About LiteCode</h2>
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('static', filename='logo.png') }}" alt="LiteCode Logo" width="120" class="rounded-circle">
+                    </div>
+                    <p class="lead">LiteCode is a premier coding education platform dedicated to helping students master programming skills and land their dream jobs.</p>
+                    
+                    <h4 class="mt-4">Our Mission</h4>
+                    <p>We aim to bridge the gap between academic learning and industry requirements by providing practical, hands-on training in modern technologies.</p>
+                    
+                    <h4 class="mt-4">Our Team</h4>
+                    <p>Our team consists of experienced software engineers and educators who are passionate about sharing their knowledge and helping students succeed.</p>
+                    
+                    <h4 class="mt-4">Our Approach</h4>
+                    <ul>
+                        <li>Project-based learning</li>
+                        <li>Personalized mentorship</li>
+                        <li>Industry-relevant curriculum</li>
+                        <li>Career support and placement assistance</li>
+                    </ul>
+                    
+                    <div class="text-center mt-5">
+                        <a href="{{ url_for('main.contact') }}" class="btn btn-primary btn-lg">Contact Us</a>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
-    
-    <div class="col-md-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body text-center">
-          <h4 class="text-primary mb-3">👨‍👩‍👧 For Parents</h4>
-          <p>Track your child's academic progress, attendance, and performance through our secure parent portal.</p>
-          <span class="badge bg-primary">Transparent Reporting</span>
-        </div>
-      </div>
-    </div>
-    
-    <div class="col-md-4">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-body text-center">
-          <h4 class="text-warning mb-3">💼 For Clients</h4>
-          <p>Hire from our pool of pre-trained, smart and job-ready developers. Collaborate for internships, projects, or placements.</p>
-          <span class="badge bg-warning text-dark">Hire with Confidence</span>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="row mt-5">
-    <div class="col-md-12">
-      <h3 class="mb-3 text-dark">🚀 Why Choose LiteCode?</h3>
-      <ul class="list-group list-group-flush">
-        <li class="list-group-item">✅ Industry-Relevant Curriculum designed by experts</li>
-        <li class="list-group-item">✅ Personalized Mentorship & Doubt Sessions</li>
-        <li class="list-group-item">✅ Hands-on Projects + Real-time Feedback</li>
-        <li class="list-group-item">✅ Dedicated Job Placement Assistance</li>
-        <li class="list-group-item">✅ Smart Attendance, Grade Tracking & Scheduling</li>
-      </ul>
-    </div>
-  </div>
-
-  <div class="row mt-5">
-    <div class="col text-center">
-      <h4 class="fw-bold text-secondary">💬 Let's build your future — together, with LiteCode.</h4>
-      <a href="{{ url_for('main.contact') }}" class="btn btn-lg btn-outline-primary mt-3">📩 Contact Us</a>
-    </div>
-  </div>
 </div>
 {% endblock %}
