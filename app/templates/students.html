@@ -6,14 +6,12 @@
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
       <i class="bi bi-plus-circle me-1"></i> Add Student
     </button>
+     <a href="{{ url_for('main.classes') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i> Back to Classes
+        </a>
   </div>
 
-  <!-- Debug Output (visible only during development) -->
-  <div class="alert alert-info d-none">
-    <strong>Debug Info:</strong>
-    <p>Students data: {{ students }}</p>
-    <p>Classes data: {{ classes }}</p>
-  </div>
+
 
   <div class="card shadow-sm">
     <div class="card-body">
@@ -21,10 +19,11 @@
         <table class="table table-hover">
           <thead class="table-primary">
             <tr>
-              <th>ID</th>
+              <th>#</th>
               <th>Name</th>
               <th>Email</th>
               <th>Class</th>
+              <th>Batch</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -32,25 +31,171 @@
             {% if students %}
               {% for student in students %}
               <tr>
-                <td>{{ student.id }}</td>
+                <td>{{ loop.index }}</td>
                 <td>{{ student.name }}</td>
                 <td>{{ student.email }}</td>
-                <td>{{ student.class_name }}</td>
+                <td>{{ student.class_name or 'N/A' }}</td>
+                <td>
+                  {% if student.batch_id %}
+                    {{ student.batch_name }}
+                    <button class="btn btn-sm btn-outline-secondary ms-2" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#changeBatchModal{{ student.id }}">
+                      <i class="bi bi-arrow-repeat"></i> Change
+                    </button>
+                  {% else %}
+                    <button class="btn btn-sm btn-outline-primary" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#assignBatchModal{{ student.id }}">
+                      <i class="bi bi-plus-circle"></i> Assign
+                    </button>
+                  {% endif %}
+                </td>
                 <td>
                   <div class="btn-group" role="group">
-                    <button class="btn btn-sm btn-outline-primary">
+                    <button class="btn btn-sm btn-outline-primary" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#editStudentModal{{ student.id }}">
                       <i class="bi bi-pencil"></i> Edit
                     </button>
-                    <button class="btn btn-sm btn-outline-danger">
+                    <button class="btn btn-sm btn-outline-danger" 
+                            data-bs-toggle="modal" 
+                            data-bs-target="#deleteStudentModal{{ student.id }}">
                       <i class="bi bi-trash"></i> Delete
                     </button>
                   </div>
                 </td>
               </tr>
+
+              <!-- Edit Student Modal -->
+              <div class="modal fade" id="editStudentModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                      <h5 class="modal-title">Edit Student</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('main.edit_student', student_id=student.id) }}">
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label class="form-label">Full Name</label>
+                          <input type="text" class="form-control" name="name" value="{{ student.name }}" required>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Email</label>
+                          <input type="email" class="form-control" name="email" value="{{ student.email }}" required>
+                        </div>
+                        <div class="mb-3">
+                          <label class="form-label">Class</label>
+                          <select class="form-select" name="class_id" required>
+                            {% for class in classes %}
+                            <option value="{{ class.id }}" {% if class.id == student.class_id %}selected{% endif %}>
+                              {{ class.name }}
+                            </option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Delete Confirmation Modal -->
+              <div class="modal fade" id="deleteStudentModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header bg-danger text-white">
+                      <h5 class="modal-title">Confirm Delete</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <p>Are you sure you want to delete student <strong>{{ student.name }}</strong>?</p>
+                      <p class="text-danger">This action cannot be undone.</p>
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                      <form method="POST" action="{{ url_for('main.delete_student', student_id=student.id) }}">
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+<!-- Assign Batch Modal -->
+<div class="modal fade" id="assignBatchModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Assign Batch to {{ student.name }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('main.assign_batch', student_id=student.id) }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Select Batch</label>
+            <select class="form-select" name="batch_id" required>
+              <option value="" selected disabled>Select Batch</option>
+              {% for batch in batches %}
+                {% if batch.class_id == student.class_id %}
+                  <option value="{{ batch.id }}">
+                    {{ batch.name }} (Class: {{ batch.class_name }})
+                  </option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Assign Batch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Change Batch Modal -->
+<div class="modal fade" id="changeBatchModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title">Change Batch for {{ student.name }}</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('main.change_batch', student_id=student.id) }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Current Batch: {{ student.batch_name }} (Class: {{ student.class_name }})</label>
+            <select class="form-select" name="batch_id" required>
+              <option value="" selected disabled>Select New Batch</option>
+              {% for batch in batches %}
+                {% if batch.class_id == student.class_id %}
+                  <option value="{{ batch.id }}" {% if batch.id == student.batch_id %}selected{% endif %}>
+                    {{ batch.name }} (Class: {{ batch.class_name }})
+                  </option>
+                {% endif %}
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Batch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="5" class="text-center text-muted py-4">
+                <td colspan="6" class="text-center text-muted py-4">
                   <i class="bi bi-exclamation-circle fs-4"></i><br>
                   No students found. Add your first student using the button above.
                 </td>
@@ -70,7 +215,7 @@
           <h5 class="modal-title" id="addStudentModalLabel">Add New Student</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form method="POST" action="{{ url_for('main.students') }}">
+        <form method="POST" action="{{ url_for('main.add_student') }}">
           <div class="modal-body">
             <div class="mb-3">
               <label for="studentName" class="form-label">Full Name</label>

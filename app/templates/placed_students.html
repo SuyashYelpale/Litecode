@@ -1,12 +1,231 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>📄 Page Title</h2>
-<p>Content goes here...</p>
-{% endblock %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="text-primary fw-bold"><i class="bi bi-check-circle me-2"></i> Placed Students</h2>
+    <div class="d-flex gap-2">
+      <div class="search-container position-relative">
+        <input type="text" class="form-control" id="studentSearch" placeholder="Search students..." style="width: 300px;">
+        <div class="dropdown-menu w-100" id="searchResults" style="display: none; position: absolute; z-index: 1000;"></div>
+      </div>
+      <button class="btn btn-primary" id="addPlacedStudentBtn" disabled>
+        <i class="bi bi-plus-circle me-1"></i> Add Selected
+      </button>
+    </div>
+  </div>
 
+  <div class="card shadow-sm">
+    <div class="card-body">
+      {% if placed_students %}
+      <div class="table-responsive">
+        <table class="table table-hover">
+          <thead class="table-primary">
+            <tr>
+              <th>#</th>
+              <th>Student Name</th>
+              <th>Company</th>
+              <th>Package (LPA)</th>
+              <th>Joining Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for student in placed_students %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ student.name }}</td>
+              <td>{{ student.company or 'N/A' }}</td>
+              <td>{{ student.package or 'N/A' }}</td>
+              <td>{{ student.joining_date.strftime('%d-%m-%Y') if student.joining_date else 'N/A' }}</td>
+              <td>
+                <div class="d-flex gap-2">
+                  <button class="btn btn-sm btn-outline-primary edit-placed-btn"
+                          data-student-id="{{ student.id }}"
+                          data-student-name="{{ student.name }}"
+                          data-company="{{ student.company }}"
+                          data-package="{{ student.package }}"
+                          data-joining-date="{{ student.joining_date.strftime('%Y-%m-%d') if student.joining_date }}">
+                    <i class="bi bi-pencil me-1"></i> Edit
+                  </button>
+<button class="btn btn-sm btn-outline-danger remove-placed-btn"
+        data-placement-id="{{ student.placement_id }}"
+        data-student-name="{{ student.name }}">
+    <i class="bi bi-trash me-1"></i> Remove
+</button>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i> No placed students found. Add students using the search above.
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
 
-{% extends 'base.html' %}
-{% block content %}
-<h2>🗂 {{ "Batches" if request.path.endswith("batches") else "Placed Students" }}</h2>
-<p>Coming soon...</p>
+<!-- Add/Edit Placement Modal -->
+<div class="modal fade" id="placementModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="placementModalTitle">Add Placement Details</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="placementForm" method="POST" action="">
+        <input type="hidden" name="student_id" id="placementStudentId">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Student Name</label>
+            <input type="text" class="form-control" id="placementStudentName" readonly>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Company Name</label>
+            <input type="text" class="form-control" name="company" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Package (LPA)</label>
+            <input type="number" step="0.01" class="form-control" name="package" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Joining Date</label>
+            <input type="date" class="form-control" name="joining_date" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Details</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Remove Placement Modal -->
+<!-- Remove Placement Modal -->
+<div class="modal fade" id="removePlacementModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title">Remove Placement</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('main.remove_placement') }}">
+        <input type="hidden" name="placement_id" id="removePlacementId">
+        <div class="modal-body">
+          <p>Are you sure you want to remove <span id="removeStudentName" class="fw-bold"></span> from placed students?</p>
+          <p class="text-danger">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger">Remove</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>  
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const studentSearch = document.getElementById('studentSearch');
+  const searchResults = document.getElementById('searchResults');
+  const addPlacedStudentBtn = document.getElementById('addPlacedStudentBtn');
+  const placementForm = document.getElementById('placementForm');
+  let selectedStudent = null;
+
+  // Student search functionality
+  studentSearch.addEventListener('input', async function() {
+    const query = this.value.trim();
+    if (query.length < 2) {
+      searchResults.style.display = 'none';
+      return;
+    }
+
+    try {
+      const response = await fetch(`/search_students?q=${encodeURIComponent(query)}`);
+      const students = await response.json();
+      
+      searchResults.innerHTML = '';
+      if (students.length === 0) {
+        searchResults.innerHTML = '<div class="dropdown-item text-muted">No students found</div>';
+      } else {
+        students.forEach(student => {
+          const item = document.createElement('a');
+          item.className = 'dropdown-item';
+          item.href = '#';
+          item.innerHTML = `
+            <div class="d-flex justify-content-between">
+              <span>${student.name}</span>
+              <small class="text-muted">${student.class_name || 'N/A'}</small>
+            </div>
+          `;
+          item.addEventListener('click', (e) => {
+            e.preventDefault();
+            studentSearch.value = student.name;
+            selectedStudent = student;
+            addPlacedStudentBtn.disabled = false;
+            searchResults.style.display = 'none';
+          });
+          searchResults.appendChild(item);
+        });
+      }
+      searchResults.style.display = 'block';
+    } catch (error) {
+      console.error('Search error:', error);
+    }
+  });
+
+  // Add placement button
+  addPlacedStudentBtn.addEventListener('click', function() {
+    if (!selectedStudent) return;
+    
+    placementForm.action = "{{ url_for('main.add_placement') }}";
+    document.getElementById('placementStudentId').value = selectedStudent.id;
+    document.getElementById('placementStudentName').value = selectedStudent.name;
+    document.getElementById('placementModalTitle').textContent = `Add Placement for ${selectedStudent.name}`;
+    
+    // Clear form for new entry
+    placementForm.querySelector('[name="company"]').value = '';
+    placementForm.querySelector('[name="package"]').value = '';
+    placementForm.querySelector('[name="joining_date"]').value = '';
+    
+    new bootstrap.Modal(document.getElementById('placementModal')).show();
+  });
+
+  // Edit placement buttons
+  document.querySelectorAll('.edit-placed-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      placementForm.action = "{{ url_for('main.update_placement') }}";
+      document.getElementById('placementStudentId').value = this.dataset.studentId;
+      document.getElementById('placementStudentName').value = this.dataset.studentName;
+      placementForm.querySelector('[name="company"]').value = this.dataset.company || '';
+      placementForm.querySelector('[name="package"]').value = this.dataset.package || '';
+      placementForm.querySelector('[name="joining_date"]').value = this.dataset.joiningDate || '';
+      document.getElementById('placementModalTitle').textContent = `Edit Placement for ${this.dataset.studentName}`;
+      
+      new bootstrap.Modal(document.getElementById('placementModal')).show();
+    });
+  });
+
+// Remove placement buttons
+document.querySelectorAll('.remove-placed-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        document.getElementById('removePlacementId').value = this.dataset.placementId;
+        document.getElementById('removeStudentName').textContent = this.dataset.studentName;
+        new bootstrap.Modal(document.getElementById('removePlacementModal')).show();
+    });
+});
+
+  // Close search results when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!studentSearch.contains(e.target) && !searchResults.contains(e.target)) {
+      searchResults.style.display = 'none';
+    }
+  });
+});
+</script>
 {% endblock %}

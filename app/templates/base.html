@@ -19,23 +19,31 @@
     
     body {
       background-color: var(--content-bg);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding-top: 56px;
     }
     
     .navbar-gradient {
       background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      position: fixed;
+      top: 0;
+      width: 100%;
+      z-index: 1030;
     }
     
     .sidebar {
       background-color: var(--sidebar-bg);
       color: white;
       width: 250px;
-      height: 100vh;
+      height: calc(100vh - 56px);
       position: fixed;
       left: 0;
       top: 56px;
       transition: all 0.3s ease;
-      z-index: 1000;
+      z-index: 1020;
       overflow-y: auto;
       box-shadow: 2px 0 10px rgba(0,0,0,0.1);
     }
@@ -64,20 +72,10 @@
       color: #ff6b6b !important;
     }
     
-    .sidebar-nested {
-      margin-left: 1rem;
-      border-left: 2px solid rgba(255,255,255,0.1);
-    }
-    
-    .sidebar-nested a {
-      padding-left: 2rem;
-      font-size: 0.9rem;
-    }
-    
     .content {
       margin-left: 250px;
       transition: all 0.3s ease;
-      min-height: calc(100vh - 56px);
+      flex: 1;
       padding: 2rem;
       background-color: var(--content-bg);
     }
@@ -95,33 +93,18 @@
       margin-right: 15px;
     }
     
-    .card {
-      border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-      border: none;
-    }
-    
-    .table-responsive {
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    
-    .table th {
-      background-color: var(--primary-color);
-      color: white;
-    }
-    
     .footer {
       margin-left: 250px;
       transition: all 0.3s ease;
       background-color: var(--sidebar-bg);
       color: white;
       padding: 1rem;
+      width: calc(100% - 250px);
     }
     
     .footer.collapsed {
       margin-left: 0;
+      width: 100%;
     }
     
     @media (max-width: 992px) {
@@ -135,6 +118,7 @@
       
       .content, .footer {
         margin-left: 0;
+        width: 100%;
       }
     }
   </style>
@@ -189,18 +173,18 @@
       <i class="bi bi-speedometer2 me-2"></i>Dashboard
     </a>
     
-    <a href="{{ url_for('main.profile') }}" class="{{ 'active' if request.path == url_for('main.profile') }}">
+    <!-- <a href="{{ url_for('main.profile') }}" class="{{ 'active' if request.path == url_for('main.profile') }}">
       <i class="bi bi-person me-2"></i>Profile
-    </a>
+    </a> -->
     
-<a href="{{ url_for('main.classes') }}" class="{{ 'active' if request.path.startswith('/classes') }}">
-  <i class="bi bi-journal-text me-2"></i>Classes
-</a>
+    <a href="{{ url_for('main.classes') }}" class="{{ 'active' if request.path.startswith('/classes') }}">
+      <i class="bi bi-journal-text me-2"></i>Classes
+    </a>
 
-<a href="{{ url_for('main.view_all_batches') }}" class="{{ 'active' if request.path == url_for('main.view_all_batches') }}">
-  <i class="bi bi-collection me-2"></i>All Batches
-</a>
-
+    <a href="{{ url_for('main.view_all_batches') }}" 
+       class="{{ 'active' if request.path == url_for('main.view_all_batches') }}">
+      <i class="bi bi-collection me-2"></i>Batches
+    </a>
     
     <a href="{{ url_for('main.students') }}" class="{{ 'active' if request.path.startswith('/students') }}">
       <i class="bi bi-people me-2"></i>Students
@@ -224,7 +208,7 @@
   <footer class="footer">
     <div class="container">
       <p>© {{ now.year }} LiteCode. All Rights Reserved.</p>
-      <small>Built with ❤️ for LiteCode</small>
+      <small>Built with ❤️ by SuYaSh for LiteCode</small>
     </div>
   </footer>
 
