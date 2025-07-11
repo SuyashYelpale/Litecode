@@ -3,6 +3,13 @@ from app.models import get_db
 from flask_wtf import FlaskForm
 from wtforms import StringField, HiddenField
 from wtforms.validators import DataRequired
+import io
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet
+from xlsxwriter import Workbook
+from flask import send_file
 
 
 main = Blueprint("main", __name__)
@@ -20,6 +27,73 @@ def dashboard():
     if 'user' not in session:
         return redirect(url_for('auth.login'))
     return render_template("dashboard.html")
+
+
+@main.route('/dashboard_data')
+def dashboard_data():
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Classes data
+        cursor.execute("""
+            SELECT c.id, c.name, COUNT(s.id) as student_count
+            FROM classes c
+            LEFT JOIN students s ON s.class_id = c.id
+            GROUP BY c.id
+            ORDER BY c.name
+        """)
+        classes = cursor.fetchall()
+        
+        # Batches data
+        cursor.execute("""
+            SELECT b.id, b.name, COUNT(s.id) as student_count
+            FROM batches b
+            LEFT JOIN students s ON s.batch_id = b.id
+            GROUP BY b.id
+            ORDER BY b.name
+            LIMIT 8
+        """)
+        batches = cursor.fetchall()
+        
+        # Students over time (last 6 months)
+        cursor.execute("""
+            SELECT 
+                DATE_FORMAT(created_at, '%Y-%m') as month,
+                COUNT(*) as count
+            FROM students
+            WHERE created_at >= DATE_SUB(NOW(), INTERVAL 6 MONTH)
+            GROUP BY month
+            ORDER BY month
+        """)
+        students_over_time = cursor.fetchall()
+        
+        # Format students over time data for chart
+        months = []
+        counts = []
+        for row in students_over_time:
+            months.append(row['month'])
+            counts.append(row['count'])
+        
+        return jsonify({
+            'classes': classes,
+            'batches': batches,
+            'students_over_time': {
+                'labels': months,
+                'data': counts
+            }
+        })
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
 
 @main.route('/profile', methods=["GET", "POST"])
 def profile():
@@ -347,6 +421,160 @@ def delete_batch(batch_id):
             conn.close()
     
     return redirect(request.referrer or url_for('main.view_all_batches'))
+
+@main.route('/batch_students/<int:batch_id>')
+def batch_students(batch_id):
+    """Get students in a specific batch"""
+    if 'user' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT s.id, s.name, s.email, c.name as class_name
+            FROM students s
+            LEFT JOIN classes c ON s.class_id = c.id
+            WHERE s.batch_id = %s
+            ORDER BY s.name
+        """, (batch_id,))
+        
+        students = cursor.fetchall()
+        return jsonify(students)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    finally:
+        if conn:
+            conn.close()
+
+@main.route('/export_batch_students/<int:batch_id>')
+def export_batch_students(batch_id):
+    """Export batch students to Excel or PDF"""
+    if 'user' not in session:
+        return redirect(url_for('auth.login'))
+
+    export_format = request.args.get('format', 'excel')
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Get batch info
+        cursor.execute("""
+            SELECT b.name as batch_name, b.day, b.time_slot, c.name as class_name
+            FROM batches b
+            LEFT JOIN classes c ON b.class_id = c.id
+            WHERE b.id = %s
+        """, (batch_id,))
+        batch_info = cursor.fetchone()
+        
+        # Get students
+        cursor.execute("""
+            SELECT s.name, s.email, c.name as class_name
+            FROM students s
+            LEFT JOIN classes c ON s.class_id = c.id
+            WHERE s.batch_id = %s
+            ORDER BY s.name
+        """, (batch_id,))
+        students = cursor.fetchall()
+        
+        if export_format == 'excel':
+            # Create Excel file
+            output = io.BytesIO()
+            workbook = Workbook(output)
+            worksheet = workbook.add_worksheet()
+            
+            # Add headers
+            headers = ['#', 'Student Name', 'Email', 'Class']
+            for col, header in enumerate(headers):
+                worksheet.write(0, col, header)
+            
+            # Add data
+            for row, student in enumerate(students, start=1):
+                worksheet.write(row, 0, row)
+                worksheet.write(row, 1, student['name'])
+                worksheet.write(row, 2, student['email'] or 'N/A')
+                worksheet.write(row, 3, student['class_name'] or 'N/A')
+            
+            workbook.close()
+            output.seek(0)
+            
+            filename = f"{batch_info['batch_name']}_students.xlsx"
+            return send_file(
+                output,
+                mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                as_attachment=True,
+                download_name=filename
+            )
+            
+        elif export_format == 'pdf':
+            # Create PDF file
+            buffer = io.BytesIO()
+            pdf = SimpleDocTemplate(buffer, pagesize=letter)
+            
+            # Create elements
+            elements = []
+            
+            # Add title
+            styles = getSampleStyleSheet()
+            title = f"{batch_info['batch_name']} Students"
+            elements.append(Paragraph(title, styles['Title']))
+            
+            # Add batch info
+            info_text = f"Class: {batch_info['class_name']} | Day: {batch_info['day']} | Time: {batch_info['time_slot']}"
+            elements.append(Paragraph(info_text, styles['Normal']))
+            elements.append(Spacer(1, 12))
+            
+            # Create table data
+            data = [['#', 'Student Name', 'Email', 'Class']]
+            for i, student in enumerate(students, start=1):
+                data.append([
+                    str(i),
+                    student['name'],
+                    student['email'] or 'N/A',
+                    student['class_name'] or 'N/A'
+                ])
+            
+            # Create table
+            table = Table(data)
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                ('GRID', (0, 0), (-1, -1), 1, colors.black)
+            ]))
+            elements.append(table)
+            
+            # Build PDF
+            pdf.build(elements)
+            buffer.seek(0)
+            
+            filename = f"{batch_info['batch_name']}_students.pdf"
+            return send_file(
+                buffer,
+                mimetype='application/pdf',
+                as_attachment=True,
+                download_name=filename
+            )
+            
+        else:
+            flash('Invalid export format', 'danger')
+            return redirect(url_for('main.view_all_batches'))
+            
+    except Exception as e:
+        flash(f'Error exporting students: {str(e)}', 'danger')
+        return redirect(url_for('main.view_all_batches'))
+    finally:
+        if conn:
+            conn.close()
+
 
 @main.route('/students')
 def students():

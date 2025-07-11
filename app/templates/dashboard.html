@@ -1,5 +1,191 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>📊 Dashboard</h2>
-<p>Welcome to your LiteCode Dashboard, {{ user }}!</p>
+<div class="container py-4">
+    <h2 class="mb-4">📊 Dashboard</h2>
+    <p class="mb-4">Welcome to your LiteCode Dashboard, <b>{{ user }}!</b></p>
+
+    <div class="row">
+        <!-- Classes Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0"><i class="bi bi-book me-2"></i>Classes Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="classesChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('main.classes') }}" class="btn btn-sm btn-outline-primary">
+                        View All Classes <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Batches Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0"><i class="bi bi-collection me-2"></i>Batches Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="batchesChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('main.view_all_batches') }}" class="btn btn-sm btn-outline-success">
+                        View All Batches <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Students Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0"><i class="bi bi-people me-2"></i>Students Overview</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="studentsChart"></canvas>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{{ url_for('main.students') }}" class="btn btn-sm btn-outline-info">
+                        View All Students <i class="bi bi-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch data from server (you'll need to create these endpoints)
+    fetch('/dashboard_data')
+        .then(response => response.json())
+        .then(data => {
+            // Classes Chart (Pie)
+            new Chart(
+                document.getElementById('classesChart'),
+                {
+                    type: 'pie',
+                    data: {
+                        labels: data.classes.map(c => c.name),
+                        datasets: [{
+                            data: data.classes.map(c => c.student_count),
+                            backgroundColor: [
+                                '#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', 
+                                '#e74a3b', '#858796', '#5a5c69', '#3a3b45'
+                            ],
+                            hoverBorderColor: "rgba(234, 236, 244, 1)",
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.raw} students`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+
+            // Batches Chart (Bar)
+            new Chart(
+                document.getElementById('batchesChart'),
+                {
+                    type: 'bar',
+                    data: {
+                        labels: data.batches.map(b => b.name),
+                        datasets: [{
+                            label: 'Students',
+                            data: data.batches.map(b => b.student_count),
+                            backgroundColor: '#1cc88a',
+                            hoverBackgroundColor: '#17a673',
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Students: ${context.raw}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            );
+
+            // Students Chart (Line)
+            new Chart(
+                document.getElementById('studentsChart'),
+                {
+                    type: 'line',
+                    data: {
+                        labels: data.students_over_time.labels,
+                        datasets: [{
+                            label: 'Students',
+                            data: data.students_over_time.data,
+                            fill: false,
+                            backgroundColor: '#36b9cc',
+                            borderColor: '#36b9cc',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            );
+        })
+        .catch(error => {
+            console.error('Error loading dashboard data:', error);
+            // Show error messages or fallback content
+        });
+});
+</script>
 {% endblock %}

@@ -123,7 +123,11 @@
             {% for batch in batches %}
             <tr>
               {% if all_batches_view %}<td>{{ batch.class_name }}</td>{% endif %}
-              <td>{{ batch.name }}</td>
+              <td>
+                <a href="#" class="batch-name-link" data-batch-id="{{ batch.id }}">
+                  {{ batch.name }}
+                </a>
+              </td>
               <td>{{ batch.day }}</td>
               <td>{{ batch.start_date.strftime('%Y-%m-%d') if batch.start_date else '' }}</td>
               <td>{{ batch.time_slot }}</td>
@@ -161,11 +165,117 @@
   </div>
 </div>
 
+<!-- Batch Students Modal -->
+<div class="modal fade" id="batchStudentsModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-primary text-white">
+        <h5 class="modal-title" id="batchStudentsModalTitle">Batch Students</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex justify-content-between mb-3">
+          <div class="batch-info">
+            <h6 id="batchInfoText"></h6>
+          </div>
+          <div class="export-buttons">
+            <button class="btn btn-sm btn-success me-2" id="exportExcelBtn">
+              <i class="bi bi-file-earmark-excel me-1"></i> Export Excel
+            </button>
+            <button class="btn btn-sm btn-danger" id="exportPdfBtn">
+              <i class="bi bi-file-earmark-pdf me-1"></i> Export PDF
+            </button>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table" id="batchStudentsTable">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Student Name</th>
+                <th>Email</th>
+                <th>Class</th>
+              </tr>
+            </thead>
+            <tbody id="batchStudentsList">
+              <!-- Students will be loaded here -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          <i class="bi bi-arrow-left me-1"></i> Back to Batches
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Set default date to today
   const today = new Date().toISOString().split('T')[0];
-  document.querySelector('input[name="start_date"]').value = today;
+  const dateInput = document.querySelector('input[name="start_date"]');
+  if (dateInput) dateInput.value = today;
+
+  // Batch name click handler
+  document.querySelectorAll('.batch-name-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      const batchId = this.getAttribute('data-batch-id');
+      const batchName = this.textContent.trim();
+      const batchDay = this.closest('tr').querySelector('td:nth-child(3)').textContent;
+      const batchTime = this.closest('tr').querySelector('td:nth-child(5)').textContent;
+      
+      // Set modal title and info
+      document.getElementById('batchStudentsModalTitle').textContent = `${batchName} Students`;
+      document.getElementById('batchInfoText').textContent = `${batchDay} ${batchTime}`;
+      
+      // Show loading state
+      const tbody = document.getElementById('batchStudentsList');
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3"><div class="spinner-border" role="status"></div></td></tr>';
+      
+      // Fetch students data
+      fetch(`/batch_students/${batchId}`)
+        .then(response => response.json())
+        .then(students => {
+          tbody.innerHTML = '';
+          
+          if (students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3">No students found in this batch</td></tr>';
+          } else {
+            students.forEach((student, index) => {
+              const row = document.createElement('tr');
+              row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${student.name}</td>
+                <td>${student.email || 'N/A'}</td>
+                <td>${student.class_name || 'N/A'}</td>
+              `;
+              tbody.appendChild(row);
+            });
+          }
+          
+          // Initialize export buttons
+          document.getElementById('exportExcelBtn').onclick = () => exportStudents(batchId, 'excel');
+          document.getElementById('exportPdfBtn').onclick = () => exportStudents(batchId, 'pdf');
+          
+          // Show modal
+          new bootstrap.Modal(document.getElementById('batchStudentsModal')).show();
+        })
+        .catch(error => {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center py-3 text-danger">Error loading students</td></tr>';
+          console.error('Error:', error);
+        });
+    });
+  });
+
+  // Export function
+  function exportStudents(batchId, format) {
+    window.location.href = `/export_batch_students/${batchId}?format=${format}`;
+  }
 });
 </script>
 {% endblock %}
