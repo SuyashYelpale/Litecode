@@ -8,6 +8,13 @@
     </button>
   </div>
 
+  <!-- Debug Output (visible only during development) -->
+  <div class="alert alert-info d-none">
+    <strong>Debug Info:</strong>
+    <p>Students data: {{ students }}</p>
+    <p>Classes data: {{ classes }}</p>
+  </div>
+
   <div class="card shadow-sm">
     <div class="card-body">
       <div class="table-responsive">
@@ -22,24 +29,33 @@
             </tr>
           </thead>
           <tbody>
-            {% for student in students %}
-            <tr>
-              <td>{{ student[0] }}</td>
-              <td>{{ student[1] }}</td>
-              <td>{{ student[2] }}</td>
-              <td>{{ student[3] }}</td>
-              <td>
-                <div class="btn-group" role="group">
-                  <button class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil"></i> Edit
-                  </button>
-                  <button class="btn btn-sm btn-outline-danger">
-                    <i class="bi bi-trash"></i> Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
-            {% endfor %}
+            {% if students %}
+              {% for student in students %}
+              <tr>
+                <td>{{ student.id }}</td>
+                <td>{{ student.name }}</td>
+                <td>{{ student.email }}</td>
+                <td>{{ student.class_name }}</td>
+                <td>
+                  <div class="btn-group" role="group">
+                    <button class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-pencil"></i> Edit
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash"></i> Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="5" class="text-center text-muted py-4">
+                  <i class="bi bi-exclamation-circle fs-4"></i><br>
+                  No students found. Add your first student using the button above.
+                </td>
+              </tr>
+            {% endif %}
           </tbody>
         </table>
       </div>
@@ -69,7 +85,7 @@
               <select class="form-select" id="studentClass" name="class_id" required>
                 <option value="" selected disabled>Select Class</option>
                 {% for class in classes %}
-                <option value="{{ class[0] }}">{{ class[1] }}</option>
+                <option value="{{ class.id }}">{{ class.name }}</option>
                 {% endfor %}
               </select>
             </div>

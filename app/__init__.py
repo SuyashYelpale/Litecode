@@ -1,7 +1,9 @@
-from flask import Flask, session
+from flask import Flask, session, current_app
 from datetime import datetime
 from app.routes import main
+from .routes import main
 from app.auth import auth_bp
+import os
 
 def create_app():
     app = Flask(__name__)
@@ -19,5 +21,18 @@ def create_app():
     @app.context_processor
     def inject_user():
         return {'user': session.get('user')}
+
+    # Debug route - only in development
+    if os.environ.get('FLASK_ENV') == 'development':
+        @app.route('/routes')
+        def list_routes():
+            import urllib.parse
+            output = []
+            for rule in current_app.url_map.iter_rules():
+                if not rule.endpoint.startswith('static'):
+                    methods = ','.join(rule.methods)
+                    line = urllib.parse.unquote(f"{rule.endpoint:50s} {methods:20s} {rule}")
+                    output.append(line)
+            return '<br>'.join(sorted(output))
 
     return app

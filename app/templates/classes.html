@@ -8,8 +8,10 @@
     </button>
   </div>
 
+
   <div class="card shadow-sm">
     <div class="card-body">
+      {% if classes %}
       <div class="table-responsive">
         <table class="table table-hover">
           <thead class="table-primary">
@@ -17,6 +19,7 @@
               <th>ID</th>
               <th>Class Name</th>
               <th>Batches</th>
+              <th>Students</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -25,14 +28,14 @@
             <tr>
               <td>{{ class.id }}</td>
               <td>{{ class.name }}</td>
-              <td>
-                <span class="badge bg-primary rounded-pill">{{ class.batch_count }}</span>
-              </td>
+              <td><span class="badge bg-primary rounded-pill">{{ class.batch_count or 0 }}</span></td>
+              <td><span class="badge bg-success rounded-pill">{{ class.student_count or 0 }}</span></td>
               <td>
                 <div class="d-flex gap-2">
-                <a href="{{ url_for('main.batches', class_id=class.id) }}" class="btn btn-sm btn-outline-primary">
-  <i class="bi bi-eye me-1"></i> View Batches
-</a>
+                  <a href="{{ url_for('main.view_class_batches', class_id=class.id) }}" 
+                     class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-eye me-1"></i> View
+                  </a>
                   <button class="btn btn-sm btn-outline-secondary edit-class-btn" 
                           data-bs-toggle="modal" 
                           data-bs-target="#editClassModal"
@@ -44,7 +47,9 @@
                           data-bs-toggle="modal"
                           data-bs-target="#deleteClassModal"
                           data-class-id="{{ class.id }}"
-                          data-class-name="{{ class.name }}">
+                          data-class-name="{{ class.name }}"
+                          {% if class.batch_count > 0 or class.student_count > 0 %}disabled
+                          title="Cannot delete class with existing batches or students"{% endif %}>
                     <i class="bi bi-trash me-1"></i> Delete
                   </button>
                 </div>
@@ -54,23 +59,26 @@
           </tbody>
         </table>
       </div>
+      {% else %}
+      <div class="alert alert-info">No classes found. Add your first class using the button above.</div>
+      {% endif %}
     </div>
   </div>
 
   <!-- Add Class Modal -->
-  <div class="modal fade" id="addClassModal" tabindex="-1" aria-labelledby="addClassModalLabel" aria-hidden="true">
+  <div class="modal fade" id="addClassModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title" id="addClassModalLabel">Add New Class</h5>
+          <h5 class="modal-title">Add New Class</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form method="POST" action="{{ url_for('main.classes') }}">
-          <input type="hidden" name="action" value="add">
+        <form method="POST" action="{{ url_for('main.add_class') }}">
+          {{ form.hidden_tag() }}
           <div class="modal-body">
             <div class="mb-3">
-              <label for="className" class="form-label">Class Name</label>
-              <input type="text" class="form-control" id="className" name="class_name" required>
+              {{ form.class_name.label(class="form-label") }}
+              {{ form.class_name(class="form-control") }}
             </div>
           </div>
           <div class="modal-footer">
@@ -83,20 +91,20 @@
   </div>
 
   <!-- Edit Class Modal -->
-  <div class="modal fade" id="editClassModal" tabindex="-1" aria-labelledby="editClassModalLabel" aria-hidden="true">
+  <div class="modal fade" id="editClassModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header bg-primary text-white">
-          <h5 class="modal-title" id="editClassModalLabel">Edit Class</h5>
+          <h5 class="modal-title">Edit Class</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form method="POST" action="{{ url_for('main.classes') }}">
-          <input type="hidden" name="action" value="edit">
-          <input type="hidden" name="class_id" id="editClassId">
+        <form method="POST" action="{{ url_for('main.edit_class') }}">
+          {{ form.hidden_tag() }}
+          {{ form.class_id(id="editClassId") }}
           <div class="modal-body">
             <div class="mb-3">
-              <label for="editClassName" class="form-label">Class Name</label>
-              <input type="text" class="form-control" id="editClassName" name="class_name" required>
+              {{ form.class_name.label(class="form-label") }}
+              {{ form.class_name(class="form-control", id="editClassName") }}
             </div>
           </div>
           <div class="modal-footer">
@@ -109,19 +117,18 @@
   </div>
 
   <!-- Delete Confirmation Modal -->
-  <div class="modal fade" id="deleteClassModal" tabindex="-1" aria-labelledby="deleteClassModalLabel" aria-hidden="true">
+  <div class="modal fade" id="deleteClassModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header bg-danger text-white">
-          <h5 class="modal-title" id="deleteClassModalLabel">Confirm Deletion</h5>
+          <h5 class="modal-title">Confirm Deletion</h5>
           <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-        <form method="POST" action="{{ url_for('main.classes') }}">
-          <input type="hidden" name="action" value="delete">
+        <form method="POST" action="{{ url_for('main.delete_class') }}">
           <input type="hidden" name="class_id" id="deleteClassId">
           <div class="modal-body">
             <p>Are you sure you want to delete the class "<span id="deleteClassName" class="fw-bold"></span>"?</p>
-            <p class="text-danger">This action cannot be undone and will delete all associated batches and student records.</p>
+            <p class="text-danger">This action cannot be undone.</p>
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -133,30 +140,21 @@
   </div>
 </div>
 
-<!-- JavaScript to handle modals -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Handle edit button clicks
-  const editButtons = document.querySelectorAll('.edit-class-btn');
-  editButtons.forEach(button => {
+  // Edit button handler
+  document.querySelectorAll('.edit-class-btn').forEach(button => {
     button.addEventListener('click', function() {
-      const classId = this.getAttribute('data-class-id');
-      const className = this.getAttribute('data-class-name');
-      
-      document.getElementById('editClassId').value = classId;
-      document.getElementById('editClassName').value = className;
+      document.getElementById('editClassId').value = this.dataset.classId;
+      document.getElementById('editClassName').value = this.dataset.className;
     });
   });
 
-  // Handle delete button clicks
-  const deleteButtons = document.querySelectorAll('.delete-class-btn');
-  deleteButtons.forEach(button => {
+  // Delete button handler
+  document.querySelectorAll('.delete-class-btn').forEach(button => {
     button.addEventListener('click', function() {
-      const classId = this.getAttribute('data-class-id');
-      const className = this.getAttribute('data-class-name');
-      
-      document.getElementById('deleteClassId').value = classId;
-      document.getElementById('deleteClassName').textContent = className;
+      document.getElementById('deleteClassId').value = this.dataset.classId;
+      document.getElementById('deleteClassName').textContent = this.dataset.className;
     });
   });
 });

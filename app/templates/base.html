@@ -193,15 +193,14 @@
       <i class="bi bi-person me-2"></i>Profile
     </a>
     
-    <a href="{{ url_for('main.classes') }}" class="{{ 'active' if request.path.startswith('/classes') or request.path.startswith('/batches') }}">
-      <i class="bi bi-journal-text me-2"></i>Classes
-    </a>
-    
-    <div class="sidebar-nested">
-      <a href="{{ url_for('main.batches') }}" class="{{ 'active' if request.path == url_for('main.batches') }}">
-        <i class="bi bi-collection me-2"></i>All Batches
-      </a>
-    </div>
+<a href="{{ url_for('main.classes') }}" class="{{ 'active' if request.path.startswith('/classes') }}">
+  <i class="bi bi-journal-text me-2"></i>Classes
+</a>
+
+<a href="{{ url_for('main.view_all_batches') }}" class="{{ 'active' if request.path == url_for('main.view_all_batches') }}">
+  <i class="bi bi-collection me-2"></i>All Batches
+</a>
+
     
     <a href="{{ url_for('main.students') }}" class="{{ 'active' if request.path.startswith('/students') }}">
       <i class="bi bi-people me-2"></i>Students

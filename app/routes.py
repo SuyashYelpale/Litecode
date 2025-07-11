@@ -1,9 +1,15 @@
 from flask import Blueprint, render_template, session, redirect, url_for, request, flash
 from app.models import get_db
 from flask import abort
-from datetime import datetime
+from flask_wtf import FlaskForm
+from wtforms import StringField, HiddenField
+from wtforms.validators import DataRequired
 
 main = Blueprint("main", __name__)
+
+class ClassForm(FlaskForm):
+    class_name = StringField('Class Name', validators=[DataRequired()])
+    class_id = HiddenField('Class ID')
 
 @main.route('/')
 def home():
@@ -22,7 +28,6 @@ def profile():
 
     conn = get_db()
     cursor = conn.cursor()
-
     username = session['user']
 
     if request.method == "POST":
@@ -65,191 +70,199 @@ def profile():
 
 @main.route('/classes')
 def classes():
-    if 'user' not in session:
-        return redirect(url_for('auth.login'))
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        
+        cursor.execute("""
+            SELECT c.id, c.name, 
+                   COUNT(DISTINCT b.id) as batch_count,
+                   COUNT(DISTINCT s.id) as student_count
+            FROM classes c
+            LEFT JOIN batches b ON b.class_id = c.id
+            LEFT JOIN students s ON s.class_id = c.id
+            GROUP BY c.id
+            ORDER BY c.name
+        """)
+        classes = cursor.fetchall()
+        
+        form = ClassForm()
+        return render_template('classes.html', classes=classes, form=form)
+        
+    except Exception as e:
+        flash('Error loading classes: ' + str(e), 'danger')
+        return render_template('classes.html', classes=[], form=ClassForm())
+    finally:
+        if conn:
+            conn.close()
 
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-    
-    cursor.execute("""
-        SELECT c.id, c.name, COUNT(b.id) as batch_count 
-        FROM classes c
-        LEFT JOIN batches b ON b.class_id = c.id
-        GROUP BY c.id
-        ORDER BY c.name
-    """)
-    classes = cursor.fetchall()
-    conn.close()
-    
-    return render_template('classes.html', classes=classes)
+@main.route('/add_class', methods=['POST'])
+def add_class():
+    form = ClassForm()
+    if form.validate_on_submit():
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO classes (name) VALUES (%s)", (form.class_name.data,))
+            conn.commit()
+            flash('Class added successfully!', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash('Error adding class: ' + str(e), 'danger')
+        finally:
+            if conn:
+                conn.close()
+    return redirect(url_for('main.classes'))
+
+@main.route('/edit_class', methods=['POST'])
+def edit_class():
+    form = ClassForm()
+    if form.validate_on_submit():
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            cursor.execute("UPDATE classes SET name = %s WHERE id = %s", 
+                          (form.class_name.data, form.class_id.data))
+            conn.commit()
+            flash('Class updated successfully!', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash('Error updating class: ' + str(e), 'danger')
+        finally:
+            if conn:
+                conn.close()
+    return redirect(url_for('main.classes'))
+
+@main.route('/delete_class', methods=['POST'])
+def delete_class():
+    class_id = request.form.get('class_id')
+    if class_id:
+        try:
+            conn = get_db()
+            cursor = conn.cursor()
+            
+            cursor.execute("SELECT COUNT(*) FROM batches WHERE class_id = %s", (class_id,))
+            if cursor.fetchone()[0] > 0:
+                flash('Cannot delete class with existing batches', 'danger')
+                return redirect(url_for('main.classes'))
+                
+            cursor.execute("DELETE FROM classes WHERE id = %s", (class_id,))
+            conn.commit()
+            flash('Class deleted successfully!', 'success')
+        except Exception as e:
+            conn.rollback()
+            flash('Error deleting class: ' + str(e), 'danger')
+        finally:
+            if conn:
+                conn.close()
+    return redirect(url_for('main.classes'))
+
+@main.route('/classes/<int:class_id>/batches')
+def view_class_batches(class_id):
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Get the class details
+        cursor.execute("SELECT id, name FROM classes WHERE id = %s", (class_id,))
+        class_info = cursor.fetchone()
+        
+        if not class_info:
+            flash('Class not found', 'danger')
+            return redirect(url_for('main.classes'))
+        
+        # Get batches for this class with student counts
+        cursor.execute("""
+            SELECT b.id, b.name, 
+                   COUNT(s.id) as student_count
+            FROM batches b
+            LEFT JOIN students s ON s.batch_id = b.id
+            WHERE b.class_id = %s
+            GROUP BY b.id
+            ORDER BY b.name
+        """, (class_id,))
+        batches = cursor.fetchall()
+        
+        return render_template('batches.html',
+                            class_info=class_info,  # Pass class info
+                            batches=batches)
+        
+    except Exception as e:
+        flash(f'Error loading batches: {str(e)}', 'danger')
+        return redirect(url_for('main.classes'))
+    finally:
+        if conn:
+            conn.close()
 
 @main.route('/batches')
-def all_batches():
-    if 'user' not in session:
-        return redirect(url_for('auth.login'))
+def view_all_batches():
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
         
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-    
-    cursor.execute("""
-        SELECT b.*, c.name as class_name, 
-               (SELECT COUNT(*) FROM students WHERE batch_id = b.id) as student_count
-        FROM batches b
-        JOIN classes c ON b.class_id = c.id
-        ORDER BY c.name, b.start_date
-    """)
-    batches = cursor.fetchall()
-    
-    cursor.execute("SELECT id, name FROM classes ORDER BY name")
-    classes = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template("batches.html",
-                         batches=batches,
-                         classes=classes,
-                         all_batches_view=True)
-
-@main.route('/batches/<int:class_id>', methods=['GET', 'POST'])
-def batches(class_id):
-    if 'user' not in session:
-        return redirect(url_for('auth.login'))
-
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-    
-    cursor.execute("SELECT * FROM classes WHERE id = %s", (class_id,))
-    class_data = cursor.fetchone()
-    
-    if not class_data:
-        conn.close()
-        abort(404)
-    
-    if request.method == 'POST':
-        batch_name = request.form['batch_name']
-        day = request.form['day']
-        start_date = request.form['start_date']
-        time_slot = request.form['time_slot']
-        notes = request.form.get('notes', '')
+        # Get all batches with class names and student counts
+        cursor.execute("""
+            SELECT b.id, b.name, c.name as class_name, COUNT(s.id) as student_count
+            FROM batches b
+            JOIN classes c ON b.class_id = c.id
+            LEFT JOIN students s ON s.batch_id = b.id
+            GROUP BY b.id
+            ORDER BY c.name, b.name
+        """)
+        batches = cursor.fetchall()
         
-        cursor.execute(
-            "INSERT INTO batches (class_id, name, day, start_date, time_slot, notes) VALUES (%s, %s, %s, %s, %s, %s)",
-            (class_id, batch_name, day, start_date, time_slot, notes)
-        )
-        conn.commit()
-        flash('Batch created successfully!', 'success')
-        return redirect(url_for('main.batches', class_id=class_id))
-    
-    cursor.execute("""
-        SELECT b.*, COUNT(s.id) as student_count
-        FROM batches b
-        LEFT JOIN students s ON s.batch_id = b.id
-        WHERE b.class_id = %s
-        GROUP BY b.id
-        ORDER BY b.start_date
-    """, (class_id,))
-    batches = cursor.fetchall()
-    
-    conn.close()
-    
-    return render_template("batches.html",
-                         class_data=class_data,
-                         batches=batches)
-
-@main.route('/edit_batch/<int:batch_id>', methods=['GET', 'POST'])
-def edit_batch(batch_id):
-    if 'user' not in session:
-        return redirect(url_for('auth.login'))
-
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-    
-    if request.method == 'POST':
-        batch_name = request.form['batch_name']
-        day = request.form['day']
-        start_date = request.form['start_date']
-        time_slot = request.form['time_slot']
-        notes = request.form.get('notes', '')
-        class_id = request.form['class_id']
+        return render_template('batches.html', batches=batches)
         
-        cursor.execute(
-            "UPDATE batches SET name = %s, day = %s, start_date = %s, time_slot = %s, notes = %s WHERE id = %s",
-            (batch_name, day, start_date, time_slot, notes, batch_id)
-        )
-        conn.commit()
-        conn.close()
-        
-        flash('Batch updated successfully!', 'success')
-        return redirect(url_for('main.batches', class_id=class_id))
-    
-    cursor.execute("SELECT * FROM batches WHERE id = %s", (batch_id,))
-    batch = cursor.fetchone()
-    
-    cursor.execute("SELECT id, name FROM classes WHERE id = %s", (batch['class_id'],))
-    class_data = cursor.fetchone()
-    
-    conn.close()
-    
-    if not batch:
-        abort(404)
-    
-    return render_template("edit_batch.html",
-                         batch=batch,
-                         class_data=class_data)
+    except Exception as e:
+        flash('Error loading batches: ' + str(e), 'danger')
+        return redirect(url_for('main.classes'))
+    finally:
+        if conn:
+            conn.close()
 
-@main.route('/delete_batch/<int:batch_id>', methods=['POST'])
-def delete_batch(batch_id):
-    if 'user' not in session:
-        return redirect(url_for('auth.login'))
-
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-    
-    cursor.execute("SELECT class_id FROM batches WHERE id = %s", (batch_id,))
-    result = cursor.fetchone()
-    
-    if not result:
-        conn.close()
-        abort(404)
-    
-    class_id = result['class_id']
-    
-    cursor.execute("DELETE FROM batches WHERE id = %s", (batch_id,))
-    conn.commit()
-    conn.close()
-    
-    flash('Batch deleted successfully!', 'success')
-    return redirect(url_for('main.batches', class_id=class_id))
-
-@main.route('/students', methods=["GET", "POST"])
+@main.route('/students')
 def students():
     if 'user' not in session:
         return redirect(url_for('auth.login'))
 
-    conn = get_db()
-    cursor = conn.cursor(dictionary=True)
-
-    if request.method == "POST":
-        name = request.form['name']
-        email = request.form['email']
-        class_id = request.form['class_id']
-        cursor.execute(
-            "INSERT INTO students (name, email, class_id) VALUES (%s, %s, %s)",
-            (name, email, class_id)
-        )
-        conn.commit()
-
-    cursor.execute("""
-        SELECT students.id, students.name, students.email, classes.name as class_name 
-        FROM students JOIN classes ON students.class_id = classes.id
-    """)
-    data = cursor.fetchall()
-    
-    cursor.execute("SELECT id, name FROM classes ORDER BY name")
-    classes = cursor.fetchall()
-    
-    conn.close()
-    return render_template("students.html", students=data, classes=classes)
+    conn = None
+    try:
+        conn = get_db()
+        cursor = conn.cursor(dictionary=True)
+        
+        # Get students with their class and batch names
+        cursor.execute("""
+            SELECT s.id, s.name, s.email, s.phone, 
+                   c.name as class_name, b.name as batch_name
+            FROM students s
+            LEFT JOIN classes c ON s.class_id = c.id
+            LEFT JOIN batches b ON s.batch_id = b.id
+            ORDER BY s.name
+        """)
+        students = cursor.fetchall()
+        
+        # Get classes for the dropdown
+        cursor.execute("SELECT id, name FROM classes ORDER BY name")
+        classes = cursor.fetchall()
+        
+        # Get batches for the dropdown
+        cursor.execute("SELECT id, name FROM batches ORDER BY name")
+        batches = cursor.fetchall()
+        
+        conn.close()
+        
+        return render_template('students.html', 
+                            students=students, 
+                            classes=classes,
+                            batches=batches)
+        
+    except Exception as e:
+        print("Database error:", str(e))
+        flash("Error loading student data", "danger")
+        return render_template('students.html', 
+                            students=[], 
+                            classes=[],
+                            batches=[])
 
 @main.route('/placed-students')
 def placed_students():

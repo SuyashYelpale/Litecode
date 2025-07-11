@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
+<!-- At the top of batches.html -->
 <h2 class="mb-4 text-primary">
   {% if all_batches_view %}
     📦 All Batches
@@ -8,28 +9,32 @@
   {% endif %}
 </h2>
 
-<!-- Navigation/Filter -->
+<!-- Navigation/Filter section -->
 <div class="d-flex justify-content-between mb-3">
   {% if all_batches_view %}
     <div class="col-md-3">
-      <select class="form-select" onchange="if(this.value) window.location.href=this.value">
-        <option value="">Filter by Class</option>
-        <option value="{{ url_for('main.batches') }}" 
-                {% if not request.args.get('class_id') %}selected{% endif %}>
-          All Classes
-        </option>
-        {% for cls in classes %}
-        <option value="{{ url_for('main.batches', class_id=cls.id) }}"
-                {% if request.args.get('class_id')|int == cls.id %}selected{% endif %}>
-          {{ cls.name }}
-        </option>
-        {% endfor %}
-      </select>
+      <!-- Change the filter dropdown in batches.html -->
+<select class="form-select" onchange="if(this.value) window.location.href=this.value">
+  <option value="">Filter by Class</option>
+  <option value="{{ url_for('main.view_all_batches') }}" 
+          {% if not request.path.startswith('/class-batches') %}selected{% endif %}>
+    All Classes
+  </option>
+  {% for cls in classes %}
+  <option value="{{ url_for('main.view_class_batches', class_id=cls.id) }}"
+          {% if request.path == url_for('main.view_class_batches', class_id=cls.id) %}selected{% endif %}>
+    {{ cls.name }}
+  </option>
+  {% endfor %}
+</select>
     </div>
   {% else %}
     <div>
       <a href="{{ url_for('main.classes') }}" class="btn btn-outline-secondary">
         ← Back to Classes
+      </a>
+      <a href="{{ url_for('main.all_batches') }}" class="btn btn-outline-primary ms-2">
+        View All Batches
       </a>
     </div>
   {% endif %}
@@ -102,8 +107,12 @@
         <td><span class="badge bg-primary">{{ batch.student_count }}</span></td>
         <td>
           <div class="btn-group">
-            <a href="{{ url_for('main.edit_batch', batch_id=batch.id) }}" 
-               class="btn btn-sm btn-outline-primary">
+            <!-- Change this in batches.html: -->
+<a href="{{ url_for('main.edit_batch', batch_id=batch.id) }}" 
+   class="btn btn-sm btn-outline-primary">
+   Edit
+</a>
+<!-- Make sure it matches exactly with your route decorator -->
               <i class="bi bi-pencil"></i>
             </a>
             <form method="POST" action="{{ url_for('main.delete_batch', batch_id=batch.id) }}">
