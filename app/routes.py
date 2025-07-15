@@ -586,9 +586,9 @@ def students():
         conn = get_db()
         cursor = conn.cursor(dictionary=True)
         
-        # Get students with their class and batch names
+        # Modified query to include mobile and age fields
         cursor.execute("""
-            SELECT s.id, s.name, s.email, s.class_id, s.batch_id,
+            SELECT s.id, s.name, s.email, s.mobile, s.age, s.class_id, s.batch_id,
                    c.name as class_name, b.name as batch_name
             FROM students s
             LEFT JOIN classes c ON s.class_id = c.id
@@ -631,20 +631,30 @@ def add_student():
     if 'user' not in session:
         return redirect(url_for('auth.login'))
 
+    conn = None
     try:
         conn = get_db()
         cursor = conn.cursor()
         
+        # Get all form data including new fields
         name = request.form['name']
         email = request.form['email']
         class_id = request.form['class_id']
+        mobile = request.form.get('mobile')  # Changed to get raw value
+        age = request.form.get('age')        # Changed to get raw value
+        
+        # Convert age to integer if provided, else None
+        age = int(age) if age and age.isdigit() else None
         
         cursor.execute("""
-            INSERT INTO students (name, email, class_id)
-            VALUES (%s, %s, %s)
-        """, (name, email, class_id))
+            INSERT INTO students (name, email, class_id, mobile, age)
+            VALUES (%s, %s, %s, %s, %s)
+        """, (name, email, class_id, mobile, age))
         conn.commit()
         flash('Student added successfully!', 'success')
+    except ValueError:
+        conn.rollback()
+        flash('Please enter a valid age number', 'danger')
     except Exception as e:
         conn.rollback()
         flash(f'Error adding student: {str(e)}', 'danger')
@@ -654,28 +664,41 @@ def add_student():
     
     return redirect(url_for('main.students'))
 
+
 @main.route('/edit_student/<int:student_id>', methods=['POST'])
 def edit_student(student_id):
     if 'user' not in session:
         return redirect(url_for('auth.login'))
 
+    conn = None
     try:
         conn = get_db()
         cursor = conn.cursor()
         
+        # Get all form data including new fields
         name = request.form['name']
         email = request.form['email']
         class_id = request.form['class_id']
+        mobile = request.form.get('mobile')  # Changed to get raw value
+        age = request.form.get('age')       # Changed to get raw value
+        
+        # Convert age to integer if provided, else None
+        age = int(age) if age and age.isdigit() else None
         
         cursor.execute("""
             UPDATE students SET
                 name = %s,
                 email = %s,
-                class_id = %s
+                class_id = %s,
+                mobile = %s,
+                age = %s
             WHERE id = %s
-        """, (name, email, class_id, student_id))
+        """, (name, email, class_id, mobile, age, student_id))
         conn.commit()
         flash('Student updated successfully!', 'success')
+    except ValueError:
+        conn.rollback()
+        flash('Please enter a valid age number', 'danger')
     except Exception as e:
         conn.rollback()
         flash(f'Error updating student: {str(e)}', 'danger')
@@ -685,11 +708,13 @@ def edit_student(student_id):
     
     return redirect(url_for('main.students'))
 
+
 @main.route('/delete_student/<int:student_id>', methods=['POST'])
 def delete_student(student_id):
     if 'user' not in session:
         return redirect(url_for('auth.login'))
 
+    conn = None
     try:
         conn = get_db()
         cursor = conn.cursor()
@@ -706,22 +731,27 @@ def delete_student(student_id):
     
     return redirect(url_for('main.students'))
 
+
+
 @main.route('/assign_batch/<int:student_id>', methods=['POST'])
 def assign_batch(student_id):
     if 'user' not in session:
         return redirect(url_for('auth.login'))
 
+    conn = None
     try:
         conn = get_db()
         cursor = conn.cursor()
         
         batch_id = request.form['batch_id']
         
+        # Update student's batch
         cursor.execute("""
-            UPDATE students SET
-                batch_id = %s
+            UPDATE students 
+            SET batch_id = %s 
             WHERE id = %s
         """, (batch_id, student_id))
+        
         conn.commit()
         flash('Batch assigned successfully!', 'success')
     except Exception as e:
@@ -733,22 +763,26 @@ def assign_batch(student_id):
     
     return redirect(url_for('main.students'))
 
+
 @main.route('/change_batch/<int:student_id>', methods=['POST'])
 def change_batch(student_id):
     if 'user' not in session:
         return redirect(url_for('auth.login'))
 
+    conn = None
     try:
         conn = get_db()
         cursor = conn.cursor()
         
         batch_id = request.form['batch_id']
         
+        # Update student's batch
         cursor.execute("""
-            UPDATE students SET
-                batch_id = %s
+            UPDATE students 
+            SET batch_id = %s 
             WHERE id = %s
         """, (batch_id, student_id))
+        
         conn.commit()
         flash('Batch changed successfully!', 'success')
     except Exception as e:

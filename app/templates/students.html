@@ -6,12 +6,10 @@
     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addStudentModal">
       <i class="bi bi-plus-circle me-1"></i> Add Student
     </button>
-     <a href="{{ url_for('main.classes') }}" class="btn btn-outline-secondary">
-          <i class="bi bi-arrow-left me-1"></i> Back to Classes
-        </a>
+    <a href="{{ url_for('main.classes') }}" class="btn btn-outline-secondary">
+      <i class="bi bi-arrow-left me-1"></i> Back to Classes
+    </a>
   </div>
-
-
 
   <div class="card shadow-sm">
     <div class="card-body">
@@ -22,6 +20,8 @@
               <th>#</th>
               <th>Name</th>
               <th>Email</th>
+              <th>Mobile</th>
+              <th>Age</th>
               <th>Class</th>
               <th>Batch</th>
               <th>Actions</th>
@@ -34,6 +34,8 @@
                 <td>{{ loop.index }}</td>
                 <td>{{ student.name }}</td>
                 <td>{{ student.email }}</td>
+                <td>{{ student.mobile if student.mobile is not none else '-' }}</td>
+                <td>{{ student.age if student.age is not none else '-' }}</td>
                 <td>{{ student.class_name or 'N/A' }}</td>
                 <td>
                   {% if student.batch_id %}
@@ -77,23 +79,33 @@
                     </div>
                     <form method="POST" action="{{ url_for('main.edit_student', student_id=student.id) }}">
                       <div class="modal-body">
-                        <div class="mb-3">
-                          <label class="form-label">Full Name</label>
-                          <input type="text" class="form-control" name="name" value="{{ student.name }}" required>
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label">Email</label>
-                          <input type="email" class="form-control" name="email" value="{{ student.email }}" required>
-                        </div>
-                        <div class="mb-3">
-                          <label class="form-label">Class</label>
-                          <select class="form-select" name="class_id" required>
-                            {% for class in classes %}
-                            <option value="{{ class.id }}" {% if class.id == student.class_id %}selected{% endif %}>
-                              {{ class.name }}
-                            </option>
-                            {% endfor %}
-                          </select>
+                        <div class="row g-3">
+                          <div class="col-md-6">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-control" name="name" value="{{ student.name }}" required>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" value="{{ student.email }}" required>
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Mobile</label>
+                            <input type="tel" class="form-control" name="mobile" value="{{ student.mobile if student.mobile is not none else '' }}" pattern="[0-9]{10}" placeholder="10-digit number">
+                          </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Age</label>
+                            <input type="number" class="form-control" name="age" value="{{ student.age if student.age is not none else '' }}" min="10" max="60">
+                          </div>
+                          <div class="col-12">
+                            <label class="form-label">Class</label>
+                            <select class="form-select" name="class_id" required>
+                              {% for class in classes %}
+                              <option value="{{ class.id }}" {% if class.id == student.class_id %}selected{% endif %}>
+                                {{ class.name }}
+                              </option>
+                              {% endfor %}
+                            </select>
+                          </div>
                         </div>
                       </div>
                       <div class="modal-footer">
@@ -127,75 +139,75 @@
                 </div>
               </div>
 
-<!-- Assign Batch Modal -->
-<div class="modal fade" id="assignBatchModal{{ student.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">Assign Batch to {{ student.name }}</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <form method="POST" action="{{ url_for('main.assign_batch', student_id=student.id) }}">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Select Batch</label>
-            <select class="form-select" name="batch_id" required>
-              <option value="" selected disabled>Select Batch</option>
-              {% for batch in batches %}
-                {% if batch.class_id == student.class_id %}
-                  <option value="{{ batch.id }}">
-                    {{ batch.name }} (Class: {{ batch.class_name }})
-                  </option>
-                {% endif %}
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Assign Batch</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+              <!-- Assign Batch Modal -->
+              <div class="modal fade" id="assignBatchModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                      <h5 class="modal-title">Assign Batch to {{ student.name }}</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('main.assign_batch', student_id=student.id) }}">
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label class="form-label">Select Batch</label>
+                          <select class="form-select" name="batch_id" required>
+                            <option value="" selected disabled>Select Batch</option>
+                            {% for batch in batches %}
+                              {% if batch.class_id == student.class_id %}
+                                <option value="{{ batch.id }}">
+                                  {{ batch.name }} (Class: {{ batch.class_name }})
+                                </option>
+                              {% endif %}
+                            {% endfor %}
+                          </select>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Assign Batch</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
 
-<!-- Change Batch Modal -->
-<div class="modal fade" id="changeBatchModal{{ student.id }}" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header bg-primary text-white">
-        <h5 class="modal-title">Change Batch for {{ student.name }}</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <form method="POST" action="{{ url_for('main.change_batch', student_id=student.id) }}">
-        <div class="modal-body">
-          <div class="mb-3">
-            <label class="form-label">Current Batch: {{ student.batch_name }} (Class: {{ student.class_name }})</label>
-            <select class="form-select" name="batch_id" required>
-              <option value="" selected disabled>Select New Batch</option>
-              {% for batch in batches %}
-                {% if batch.class_id == student.class_id %}
-                  <option value="{{ batch.id }}" {% if batch.id == student.batch_id %}selected{% endif %}>
-                    {{ batch.name }} (Class: {{ batch.class_name }})
-                  </option>
-                {% endif %}
-              {% endfor %}
-            </select>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="submit" class="btn btn-primary">Update Batch</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
+              <!-- Change Batch Modal -->
+              <div class="modal fade" id="changeBatchModal{{ student.id }}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                  <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                      <h5 class="modal-title">Change Batch for {{ student.name }}</h5>
+                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form method="POST" action="{{ url_for('main.change_batch', student_id=student.id) }}">
+                      <div class="modal-body">
+                        <div class="mb-3">
+                          <label class="form-label">Current Batch: {{ student.batch_name }} (Class: {{ student.class_name }})</label>
+                          <select class="form-select" name="batch_id" required>
+                            <option value="" selected disabled>Select New Batch</option>
+                            {% for batch in batches %}
+                              {% if batch.class_id == student.class_id %}
+                                <option value="{{ batch.id }}" {% if batch.id == student.batch_id %}selected{% endif %}>
+                                  {{ batch.name }} (Class: {{ batch.class_name }})
+                                </option>
+                              {% endif %}
+                            {% endfor %}
+                          </select>
+                        </div>
+                      </div>
+                      <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update Batch</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="6" class="text-center text-muted py-4">
+                <td colspan="8" class="text-center text-muted py-4">
                   <i class="bi bi-exclamation-circle fs-4"></i><br>
                   No students found. Add your first student using the button above.
                 </td>
@@ -217,22 +229,32 @@
         </div>
         <form method="POST" action="{{ url_for('main.add_student') }}">
           <div class="modal-body">
-            <div class="mb-3">
-              <label for="studentName" class="form-label">Full Name</label>
-              <input type="text" class="form-control" id="studentName" name="name" required>
-            </div>
-            <div class="mb-3">
-              <label for="studentEmail" class="form-label">Email</label>
-              <input type="email" class="form-control" id="studentEmail" name="email" required>
-            </div>
-            <div class="mb-3">
-              <label for="studentClass" class="form-label">Class</label>
-              <select class="form-select" id="studentClass" name="class_id" required>
-                <option value="" selected disabled>Select Class</option>
-                {% for class in classes %}
-                <option value="{{ class.id }}">{{ class.name }}</option>
-                {% endfor %}
-              </select>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Full Name</label>
+                <input type="text" class="form-control" name="name" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Email</label>
+                <input type="email" class="form-control" name="email" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Mobile Number</label>
+                <input type="tel" class="form-control" name="mobile" pattern="[0-9]{10}" placeholder="10-digit number">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Age</label>
+                <input type="number" class="form-control" name="age" min="10" max="60">
+              </div>
+              <div class="col-12">
+                <label class="form-label">Class</label>
+                <select class="form-select" name="class_id" required>
+                  <option value="" selected disabled>Select Class</option>
+                  {% for class in classes %}
+                  <option value="{{ class.id }}">{{ class.name }}</option>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
           </div>
           <div class="modal-footer">
@@ -244,4 +266,15 @@
     </div>
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Mobile number validation
+  document.querySelectorAll('input[name="mobile"]').forEach(input => {
+    input.addEventListener('input', function() {
+      this.value = this.value.replace(/\D/g, '').slice(0, 10);
+    });
+  });
+});
+</script>
 {% endblock %}
